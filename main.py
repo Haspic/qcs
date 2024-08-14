@@ -5,12 +5,30 @@ from tkinter import ttk
 from tkinter import messagebox as mb
 
 
-""" ===== ===== ===== ===== ===== ===== """
+""" ===== ===== ===== DIMENSIONS ===== ===== ===== """
+
+
+rb = 20  # border - border
+bd = 4   # borders width
+
+win_width = 900
+win_height = 600
+
+wid_height = 150
+wid_width = win_width - 2*rb
+
+cir_height = win_height - wid_height - 3*rb
+cir_width = wid_width
+cir_line_height = 65
+
+circuit_size = 4
+
+
+""" ===== ===== ===== TKINTER MANAGEMENT FUNCTIONS ===== ===== ===== """
 
 
 def PASS():
     pass
-
 
 def bindButtons(slide_widgets):
     for widget, method, kwargs in slide_widgets:
@@ -51,105 +69,104 @@ def eraseFrame(frame_widgets):
                 widget.place_forget()
 
 
-""" ===== ===== ===== ===== ===== ===== """
+""" ===== ===== ===== TKINTER OBJECTS ===== ===== ===== """
+
 
 class DragableWidget(Button):
 
-    def __init__(self, circuit_frame, **kwargs):
-        super().__init__(**kwargs)
+    def _reset_position(self):
+        self.place(x=self.x_init, y=self.y_init)
 
+    def __init__(self, circuit_frame, grid, gate, **kwargs):
+
+        super().__init__(text=gate, **kwargs)
+
+        self.gate = gate
         self.circuit = circuit_frame
 
         self.bind("<B1-Motion>", self.on_drag)
         self.bind("<ButtonRelease>", self.on_drop)
+        bindButtonHover(self)
 
         # ----- #
 
-        self.w = 35 * (self.winfo_width() / 2)
-        self.h = 35 * (self.winfo_height() / 2)
+        self.x_init = 20 + rb + grid[0] * 60 + grid[2] * 20
+        self.y_init = 20 + rb + grid[1] * 60
+
+        self.x_offset = -10
+        self.y_offset = -10
 
         # ----- #
 
-        self.LOCKED = False
+        self.selected_line = None
+        self.LOCKED = True
+
         self.configure(cursor="pencil")
+        self._reset_position()
 
     def on_drag(self, event):
-        # if not self.LOCKED:
-        #     X, Y = self.master.winfo_pointerx() - self.master.winfo_rootx(), self.master.winfo_pointery() - self.root.winfo_rooty()  # mouse position
-        #     self.x = X - (200 + self.w)  # 200 for y offset, 30 for middle of button
-        #     self.y = Y - self.h  # 20 for middle of button
-        #     self.place(x=self.x, y=self.y)
-        # print(event.x, event.y)
 
         # Mouse position
         X = self.master.winfo_pointerx() - self.master.winfo_rootx()
         Y = self.master.winfo_pointery() - self.master.winfo_rooty()
 
-        self.place(x = X - 10, y = Y - 10)
+        self.place(x = X + self.x_offset, y = Y + self.y_offset)
 
-        # Located in drag-n-drop area
-        if 50 < X < 850:
+        # Is located in X drag-n-drop area ?
+        if rb < X < win_width - rb:
 
-            if 255 <= Y < 330: # L1
-                for i, line in enumerate(self.circuit.LINES):
-                    if i == 0:
-                        line.configure(relief='raised')
-                    else:
-                        line.configure(relief='flat')
+            IN = False
 
-            elif 330 <= Y < 405: # L2
-                for i, line in enumerate(self.circuit.LINES):
-                    if i == 1:
-                        line.configure(relief='raised')
-                    else:
-                        line.configure(relief='flat')
+            # For all existing lines (qubits)
+            for i in range(len(self.circuit.LINES)):
 
-            elif 405 <= Y < 480: # L3
-                for i, line in enumerate(self.circuit.LINES):
-                    if i == 2:
-                        line.configure(relief='raised')
-                    else:
-                        line.configure(relief='flat')
+                top = rb*2 + wid_height + cir_line_height * i
+                btm = top + cir_line_height
 
-            elif 480 <= Y < 555: # L4
-                for i, line in enumerate(self.circuit.LINES):
-                    if i == 3:
-                        line.configure(relief='raised')
-                    else:
-                        line.configure(relief='flat')
+                # Is located in Y drag-n-drop area ?
+                if top <= Y < btm:
+                    IN = True
+                    for j, line in enumerate(self.circuit.LINES):
+                        if i == j:
+                            self.selected_line = j
+                            line.configure(relief='raised')
+                        else:
+                            line.configure(relief='flat')
 
-            else:
+            # Not in Y drag-n-drop area
+            if not IN:
                 for line in self.circuit.LINES:
+                    self.selected_line = None
                     line.configure(relief='flat')
+
+        # Not in X drag-n-drop area
         else:
             for line in self.circuit.LINES:
+                self.selected_line = None
                 line.configure(relief='flat')
 
-
     def on_drop(self, event):
-        # if not self.LOCKED:
-        #     X, Y = self.master.winfo_pointerx() - self.master.winfo_rootx(), self.master.winfo_pointery() - self.master.winfo_rooty()
-        #     self.x = X - (200 + self.w)
-        #     self.y = Y - self.h
-        #     self.place(x=self.x, y=self.y)
 
-        #     main.update_paths()
-        #
-        # else:
-        #     main.queue_state(self.NAME)
+        if self.selected_line is not None:
+            self.circuit.add_gate(self.selected_line, self.gate)
 
         for line in self.circuit.LINES:
             line.configure(relief='flat')
 
-        self.place(x=35, y=33)
+        self._reset_position()
+        self.selected_line = None
 
 
-""" ===== ===== ===== ===== ===== ===== """
+""" ----- ----- ----- ----- ----- ----- """
+
 
 class qubit_line(Frame):
 
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
+
+
+""" ----- ----- ----- ----- ----- ----- """
 
 
 class circuit_subframe(Frame):
@@ -165,17 +182,17 @@ class circuit_subframe(Frame):
             SUBFRAME = qubit_line(master=self,
                                   width=self.line_width,
                                   height=self.line_height,
-                                  bd=4,
+                                  bd=bd,
                                   relief='flat')
 
             LINES.append(SUBFRAME)
 
         return LINES
 
-    def __init__(self, circuit_size, relief="ridge", bd=4, **kwargs):
+    def __init__(self, circuit_size, relief="ridge", bd=bd, **kwargs):
 
-        self.line_width = 300
-        self.line_height = 65
+        self.line_width = cir_width - 2*bd
+        self.line_height = cir_line_height
 
         width = self.line_width
         height = self.line_height * circuit_size
@@ -188,10 +205,27 @@ class circuit_subframe(Frame):
         for line in self.LINES:
             line.pack(side=TOP, fill=X, expand=True)
 
+        # control line such that when all lines are filled, the frames
+        # do not collapse on middle (because we are using pack for the gates)
+        control_line = Frame(self, width=self.line_width)
+        control_line.pack(side=TOP, fill=X, expand=True)
+
         super().pack(**kwargs)
 
+    def rm_gate(self, widget):
+        widget.destroy()
 
-""" ===== ===== ===== ===== ===== ===== """
+    def add_gate(self, selected_line, gate):
+
+        master = self.LINES[selected_line]
+
+        wid_gate = Button(master, text=gate, width=4, height=2,
+                          font=("Helvetica", 12, "bold"), bg="steelblue3")
+        bindButtonHover(wid_gate)
+        wid_gate.bind("<ButtonPress-1>", lambda event: self.rm_gate(wid_gate))
+        wid_gate.pack(side=LEFT, padx=5)
+
+""" ----- ----- ----- ----- ----- ----- """
 
 
 class window(Tk):
@@ -221,7 +255,7 @@ class window(Tk):
         """ ############### APP INIT ############### """
         """ ######################################## """
 
-        self.geometry("900x600")
+        self.geometry("{}x{}".format(win_width, win_height))
         # self.minsize(750, 500)
         self.resizable(True, True)
         self.title("Quantum Circuit Simulator")
@@ -235,13 +269,6 @@ class window(Tk):
 
         menuBar = Menu(self)
 
-        # Rocket menubar
-        rocketMenu = Menu(menuBar, tearoff=0)
-        rocketMenu.add_command(label="Create", command=PASS)
-        rocketMenu.add_command(label="Load", command=PASS)
-        rocketMenu.add_command(label="Quit", command=self.QUIT)
-        menuBar.add_cascade(label="Rocket", menu=rocketMenu)
-
         # Help menubar
         helpMenu = Menu(menuBar, tearoff=0)
         helpMenu.add_command(label="Load info", command=PASS)
@@ -254,12 +281,12 @@ class window(Tk):
         """###########################################"""
 
         FRAME_widgets = Frame(self,
-                              width=860,
-                              height=200,
+                              width=wid_width,
+                              height=wid_height,
                               bd=4,
                               relief='ridge')
 
-        FRAME_circuit = circuit_subframe(master=self, circuit_size=4)
+        FRAME_circuit = circuit_subframe(master=self, circuit_size=circuit_size)
 
         """###########################################"""
         """############### LABELS INIT ###############"""
@@ -276,12 +303,31 @@ class window(Tk):
 
         """ -------------------- BUTTONS -------------------- """
 
-        # TESTS #
+        # GATES #
 
-        TEST_BUTTON = DragableWidget(FRAME_circuit, master=self, text="H",
-                                     command=lambda: PASS, width=4, height=2,
+        X = DragableWidget(FRAME_circuit, grid=(0, 0, 0),
+                                     master=self, gate="X", width=4, height=2,
                                      font=("Helvetica", 12, "bold"), bg="steelblue3")
 
+        Y = DragableWidget(FRAME_circuit, grid=(1, 0, 0),
+                                     master=self, gate="Y", width=4, height=2,
+                                     font=("Helvetica", 12, "bold"), bg="steelblue3")
+
+        Z = DragableWidget(FRAME_circuit, grid=(0, 1, 0),
+                                     master=self, gate="Z", width=4, height=2,
+                                     font=("Helvetica", 12, "bold"), bg="steelblue3")
+
+        CX = DragableWidget(FRAME_circuit, grid=(2, 0, 1),
+                           master=self, gate="CX", width=4, height=2,
+                           font=("Helvetica", 12, "bold"), bg="steelblue3")
+
+        CY = DragableWidget(FRAME_circuit, grid=(3, 0, 1),
+                           master=self, gate="CY", width=4, height=2,
+                           font=("Helvetica", 12, "bold"), bg="steelblue3")
+
+        CZ = DragableWidget(FRAME_circuit, grid=(2, 1, 1),
+                           master=self, gate="CZ", width=4, height=2,
+                           font=("Helvetica", 12, "bold"), bg="steelblue3")
 
         # MAIN SLIDE #
 
@@ -297,8 +343,7 @@ class window(Tk):
         """##################################################"""
 
         WIDGET_mainMenu = [(FRAME_widgets, "pack", {"side": TOP, "pady": 20}),
-                           (FRAME_circuit, "pack", {"side": TOP, "pady": 20}),
-                           (TEST_BUTTON, "place", {"x": 35, "y": 33})]
+                           (FRAME_circuit, "pack", {"side": TOP})]
 
         # WIDGET_singleSimulation = [(BUTTON_BACK, "pack", {"expand": True})]
 
