@@ -35,12 +35,12 @@ def bindButtons(slide_widgets):
         if isinstance(widget, Button):
             bindButtonHover(widget)
 
-def bindButtonHover(button):
+def bindButtonHover(button, cl_en="gold", cl_le="steelblue3"):
     """Configure given button, in order for it to change color when the mouse hovers over it"""
     # mouse hover
-    button.bind("<Enter>", lambda i: button.config(bg="gold"))  # #999999
+    button.bind("<Enter>", lambda i: button.config(bg=cl_en))  # #999999
     # mouse leaves hover
-    button.bind("<Leave>", lambda i: button.config(bg="steelblue3"))  # #F0F0F0
+    button.bind("<Leave>", lambda i: button.config(bg=cl_le))  # #F0F0F0
 
 def buildFrame(frame_widgets):
     """Builds frame from given widget list (order matters)"""
@@ -77,16 +77,16 @@ class DragableWidget(Button):
     def _reset_position(self):
         self.place(x=self.x_init, y=self.y_init)
 
-    def __init__(self, circuit_frame, grid, gate, **kwargs):
+    def __init__(self, circuit_frame, grid, gate, bg, **kwargs):
 
-        super().__init__(text=gate, **kwargs)
+        super().__init__(text=gate, bg=bg, **kwargs)
 
         self.gate = gate
         self.circuit = circuit_frame
 
         self.bind("<B1-Motion>", self.on_drag)
         self.bind("<ButtonRelease>", self.on_drop)
-        bindButtonHover(self)
+        bindButtonHover(self, cl_le=bg)
 
         # ----- #
 
@@ -200,6 +200,14 @@ class circuit_subframe(Frame):
         super().__init__(relief=relief, bd=bd, width=width, height=height, **kwargs)
         self.LINES = self._init_size_(circuit_size)
 
+        # TEST ZONE
+
+        c = Canvas(self.LINES[0], width=55, height=50)
+        c.create_line(5, 25, 55, 25, width=1)
+        c.pack(side=LEFT)
+
+        # TEST ZONE
+
     def pack(self, **kwargs):
 
         for line in self.LINES:
@@ -220,8 +228,8 @@ class circuit_subframe(Frame):
         master = self.LINES[selected_line]
 
         wid_gate = Button(master, text=gate, width=4, height=2,
-                          font=("Helvetica", 12, "bold"), bg="steelblue3")
-        bindButtonHover(wid_gate)
+                          font=("Helvetica", 12, "bold"), bg="cornsilk3")
+        bindButtonHover(wid_gate, cl_le="cornsilk3")
         wid_gate.bind("<ButtonPress-1>", lambda event: self.rm_gate(wid_gate))
         wid_gate.pack(side=LEFT, padx=5)
 
@@ -257,7 +265,7 @@ class window(Tk):
 
         self.geometry("{}x{}".format(win_width, win_height))
         # self.minsize(750, 500)
-        self.resizable(True, True)
+        self.resizable(False, False)
         self.title("Quantum Circuit Simulator")
         self.iconbitmap("assets/qubit.ico")
         self.protocol("WM_DELETE_WINDOW", self.QUIT)
@@ -319,15 +327,19 @@ class window(Tk):
 
         CX = DragableWidget(FRAME_circuit, grid=(2, 0, 1),
                            master=self, gate="CX", width=4, height=2,
-                           font=("Helvetica", 12, "bold"), bg="steelblue3")
+                           font=("Helvetica", 12, "bold"), bg="steelblue1")
 
         CY = DragableWidget(FRAME_circuit, grid=(3, 0, 1),
                            master=self, gate="CY", width=4, height=2,
-                           font=("Helvetica", 12, "bold"), bg="steelblue3")
+                           font=("Helvetica", 12, "bold"), bg="steelblue1")
 
         CZ = DragableWidget(FRAME_circuit, grid=(2, 1, 1),
                            master=self, gate="CZ", width=4, height=2,
-                           font=("Helvetica", 12, "bold"), bg="steelblue3")
+                           font=("Helvetica", 12, "bold"), bg="steelblue1")
+
+        H = DragableWidget(FRAME_circuit, grid=(4, 0, 2),
+                           master=self, gate="H", width=4, height=2,
+                           font=("Helvetica", 12, "bold"), bg="dark sea green")
 
         # MAIN SLIDE #
 
