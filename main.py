@@ -1,6 +1,5 @@
 
 from tkinter import *
-from tkinter import ttk
 
 from tkinter import messagebox as mb
 
@@ -33,20 +32,21 @@ circuit_gate_width = 14
 def PASS():
     pass
 
-def bindButtons(slide_widgets):
+def bindButtons(slide_widgets: list):
+    """ Binds all buttons given in widget list """
     for widget, method, kwargs in slide_widgets:
         if isinstance(widget, Button):
             bindButtonHover(widget)
 
 def bindButtonHover(button, cl_en="gold", cl_le="steelblue3"):
-    """Configure given button, in order for it to change color when the mouse hovers over it"""
+    """ Configure given button, in order for it to change color when the mouse hovers over it """
     # mouse hover
     button.bind("<Enter>", lambda i: button.config(bg=cl_en))  # #999999
     # mouse leaves hover
     button.bind("<Leave>", lambda i: button.config(bg=cl_le))  # #F0F0F0
 
-def buildFrame(frame_widgets):
-    """Builds frame from given widget list (order matters)"""
+def buildFrame(frame_widgets: list):
+    """ Builds frame from given widget list (order matters) """
     for widget, method, kwargs in frame_widgets:
 
         match method:
@@ -58,8 +58,8 @@ def buildFrame(frame_widgets):
             case "place":
                 widget.place(**kwargs)
 
-def eraseFrame(frame_widgets):
-    """Erase frame from given widget list"""
+def eraseFrame(frame_widgets: list):
+    """ Erase frame from given widget list """
     for widget, method, kwargs in frame_widgets:
 
         match method:
@@ -80,13 +80,31 @@ class DragableWidget(Button):
     def _reset_position(self):
         self.place(x=self.x_init, y=self.y_init)
 
-    def __init__(self, circuit_frame, grid, gate, bg, **kwargs):
+    def __init__(self,
+                 circuit_frame,
+                 grid: tuple,
+                 gate: str,
+                 gate_type: str,
+                 bg: str,
+                 **kwargs):
+        """
+        Dragable gate widget.
 
+        :param circuit_frame: tkinter master element (circuit_subframe class)
+        :param grid: tuple of grid position within gate widget frame (column, row, group)
+        :param gate: gate name
+        :param gate_type: simple or complex (simple -> X, H.. complex -> CX, CZ..)
+        :param bg: background color of gate widget
+        :param kwargs: keyword arguments passed to tkinter Button widget
+        """
+
+        # tkinter Button widget
         super().__init__(text=gate, bg=bg, **kwargs)
 
         self.gate = gate
         self.circuit = circuit_frame
 
+        # bind dragging to drag functions
         self.bind("<B1-Motion>", self.on_drag)
         self.bind("<ButtonRelease>", self.on_drop)
         bindButtonHover(self, cl_le=bg)
@@ -106,14 +124,23 @@ class DragableWidget(Button):
         self.LOCKED = True
 
         self.configure(cursor="pencil")
+
+        # Initialize widget position
         self._reset_position()
 
-    def on_drag(self, event):
+    def on_drag(self, event) -> None:
+        """
+        Dragging function, moves the widget's position to the mouse and activate
+        appropriate visual animation on the qubits/lines subframes.
+
+        :param event: bound event
+        """
 
         # Mouse position
         X = self.master.winfo_pointerx() - self.master.winfo_rootx()
         Y = self.master.winfo_pointery() - self.master.winfo_rooty()
 
+        # Move widget
         self.place(x = X + self.x_offset, y = Y + self.y_offset)
 
         # Is located in X drag-n-drop area ?
@@ -130,44 +157,41 @@ class DragableWidget(Button):
                 # Is located in Y drag-n-drop area ?
                 if top <= Y < btm:
 
+                    # Which gate is it selecting ?
                     self.selected_gate = int((X - rb) // (cir_width / circuit_gate_width))
+                    self.selected_line = i
 
                     IN = True
-                    for j, line in enumerate(self.circuit.LINES):
-                        if i == j:
-                            self.selected_line = j
 
-                            line.up()
-                            line.set_dynamic_gate(self.selected_gate)
-
-                        else:
-                            line.down()
-
-
+                    self.circuit.highlight(i, self.selected_gate)
 
             # Not in Y drag-n-drop area
             if not IN:
-                for line in self.circuit.LINES:
-                    self.selected_line = None
-                    self.selected_gate = None
-                    line.down()
+                self.selected_line = None
+                self.selected_gate = None
+                self.circuit.minimize()
 
         # Not in X drag-n-drop area
         else:
-            for line in self.circuit.LINES:
-                self.selected_line = None
-                self.selected_gate = None
-                line.down()
+            self.selected_line = None
+            self.selected_gate = None
+            self.circuit.minimize()
 
-    def on_drop(self, event):
+    def on_drop(self, event) -> None:
+        """
+        Dropping function, calls for gate addition at appropriate location if not outside of range,
+        and resets position of the widget.
 
+        :param event: bound event
+        """
+
+        # If a line is selected (otherwise outside the frame)
         if self.selected_line is not None:
             self.circuit.add_gate(self.selected_line, self.selected_gate, self.gate)
 
-        for line in self.circuit.LINES:
-            line.configure(relief='flat')
-
+        self.circuit.minimize()
         self._reset_position()
+
         self.selected_line = None
 
 
@@ -177,24 +201,36 @@ class DragableWidget(Button):
 class DynamicCanvas(Canvas):
 
     def __init__(self, master, **kwargs):
+        """
+        Dynamic canvas for line animation (switch from line to square)
+
+        :param master: tkinter master element
+        :param kwargs: parameters to be passed on to tkinter Canvas widget
+        """
         super().__init__(master=master, **kwargs)
 
         self.state = "line" # 'line' or 'rect'
+
+        # Initialize canvas as a line
         self.makeLine()
 
     def reset(self):
+        """ Reset canvas to line if not already """
         if self.state == "rect":
             self.empty()
             self.makeLine()
 
     def empty(self):
+        """ Clear canvas """
         self.delete("all")
 
     def makeLine(self):
+        """ Switch to line """
         self.create_line(0, 28, 65, 28, width=1)
         self.state = "line"
 
     def makeRect(self):
+        """ Switch to square """
         self.empty()
         self.create_rectangle(5, 5, 55, 55, width=1, dash=(3, 1))
         self.state = "rect"
@@ -206,43 +242,79 @@ class DynamicCanvas(Canvas):
 class qubit_line(Frame):
 
     def up(self):
+        """ Up animation """
         self.configure(relief='raised')
 
     def down(self):
+        """ Down animation """
         self.configure(relief='flat')
-        self.reset_dynamic_gate()
+        self.reset_dynamic_gates()
 
     def __init__(self, **kwargs):
+        """
+        Dynamic frame for qubit/line handling within circuit_frame
+
+        :param kwargs: parameters to be passed on to tkinter Canvas widget
+        """
         super().__init__(**kwargs)
 
+        # Pre-allocate space for all possible gate locations with dynamic canvas
         self.dynamic_content = [DynamicCanvas(self, width=gate_size, height=gate_size) for _ in range(circuit_gate_width)]
 
         for i, canva in enumerate(self.dynamic_content):
             canva.grid(sticky=N, column=i, row=0)
 
-    def reset_dynamic_gate(self):
+    def reset_dynamic_gates(self):
+        """ Reset all dynamic canvas within this line """
         for gate in self.dynamic_content:
             if isinstance(gate, DynamicCanvas):
                 gate.reset()
 
-    def set_dynamic_gate(self, gate_number):
+    def set_dynamic_gate(self, gate_number: None or int) -> None:
+        """
+        Resets all activated canvas and activates the specified gate canvas (animation)
 
-        self.reset_dynamic_gate()
+        :param gate_number: gate location to animate
+        """
+        self.reset_dynamic_gates()
 
+        # If given gate number is None, then we simply reset the canvas (mouse outside of frame)
         if gate_number is not None:
             c = self.dynamic_content[gate_number]
 
             if isinstance(c, DynamicCanvas):
                 c.makeRect()
 
-    def rm_gate(self, widget, selected_gate):
-        widget.destroy()
+    def rm_gate(self, selected_gate: int) -> None:
+        """
+        Self remove function given to gate widgets once placed on qubit/line frame
+
+        :param selected_gate: gate number to widget to destroy
+        """
+        # Destroy widget
+        self.dynamic_content[selected_gate].destroy()
+        # Replace widget
         self.dynamic_content[selected_gate] = DynamicCanvas(self, width=gate_size, height=gate_size)
         self.dynamic_content[selected_gate].grid(sticky=N, column=selected_gate, row=0)
 
-    def add_gate(self, wid_gate, gate_number):
+    def add_gate(self, gate_number: int, gate_name: str) -> None:
+        """
+        Adds a gate widget to given location if empty (dynamic canvas)
 
-        self.reset_dynamic_gate()
+        :param gate_number: gate number
+        :param gate_name: gate name
+        """
+
+        # Creates gate widget
+        wid_gate = Button(self, text=gate_name, width=4, height=2,
+                          font=("Helvetica", 12, "bold"), bg="cornsilk3", cursor="pirate")
+        wid_gate.bind("<ButtonPress-1>", lambda event: self.rm_gate(gate_number))
+        bindButtonHover(wid_gate, cl_le="cornsilk3")
+
+        # Reset animations
+        self.reset_dynamic_gates()
+
+        # Check for other gate at same location
         c = self.dynamic_content[gate_number]
 
         if isinstance(c, DynamicCanvas):
@@ -257,25 +329,42 @@ class qubit_line(Frame):
 class circuit_subframe(Frame):
 
 
-    def _init_size_(self, circuit_size):
+    def _init_size_(self, circuit_size: int) -> list:
+        """
+        Initialize the circuit subframe with the specified number of qubits
+
+        :param circuit_size: size of circuit (in qubits/lines)
+        :return: list of line frames (qubit_lines objects)
+        """
 
         LINES = [] # QUBITS
 
         # Initialize all sub-frames (1 per qubit)
         for i in range(circuit_size):
-
             SUBFRAME = qubit_line(master=self,
                                   width=self.line_width,
                                   height=self.line_height,
                                   bd=bd,
                                   relief='flat')
-
             LINES.append(SUBFRAME)
 
         return LINES
 
-    def __init__(self, circuit_size, relief="ridge", bd=bd, **kwargs):
+    def __init__(self,
+                 circuit_size: int,
+                 relief = "ridge",
+                 bd = bd,
+                 **kwargs):
+        """
+        Circuit frame, composed of 'circuit_size' amount of qubits
 
+        :param circuit_size: circuit size (qubits amount)
+        :param relief: relief of frame
+        :param bd: border width
+        :param kwargs: parameters to be passed on to tkinter Frame widget
+        """
+
+        # Initialize size of frame
         self.line_width = cir_width - 2*bd
         self.line_height = cir_line_height
 
@@ -283,31 +372,64 @@ class circuit_subframe(Frame):
         height = self.line_height * circuit_size
 
         super().__init__(relief=relief, bd=bd, width=width, height=height, **kwargs)
+
+        # Initialize sub-frames (qubit lines)
         self.LINES = self._init_size_(circuit_size)
 
     def pack(self, **kwargs):
+        """
+        Packing function (packs all sub-frames as well)
 
-        for line in self.LINES:
+        :param kwargs: parameters to be passed on to tkinter Frame.pack() method
+        """
+
+        # Pack sub-frames
+        for i, line in enumerate(self.LINES):
             line.pack(side=TOP, fill=X, expand=True)
+            # line.grid(sticky=W, column=0, row=i)
 
-        # control line such that when all lines are filled, the frames
-        # do not collapse on middle (because we are using pack for the gates)
+        # control line to avoid collapse of sub-frames on themselves once filled
+        control_line1 = Frame(self, width=self.line_width)
+        control_line1.pack(side=TOP, fill=X, expand=True)
+        # control_line1.grid(sticky=N, column=0, row=len(self.LINES), columnspan=2)
 
-        control_line = Frame(self, width=self.line_width)
-        control_line.pack(side=TOP, fill=X, expand=True)
+        # control_line2 = Frame(self, height=self.line_height + 40)
+        # control_line2.pack(side=LEFT, fill=Y, expand=True)
+        # control_line2.grid(sticky=W, column=1, row=0, rowspan=len(self.LINES))
 
+        # main frame packing
         super().pack(**kwargs)
 
-    def add_gate(self, selected_line, selected_gate, gate_name):
+    def minimize(self):
+        """ Minimize all qubits/lines animations """
+        for line in self.LINES:
+            line.down()
 
+    def highlight(self, line_n: int, gate_n: int) -> None:
+        """
+        Highlight animation for given line and gate
+
+        :param line_n: line number
+        :param gate_n: gate number
+        """
+        for i, line in enumerate(self.LINES):
+            if i == line_n:
+                line.up()
+                line.set_dynamic_gate(gate_n)
+            else:
+                line.down()
+
+    def add_gate(self, selected_line: int, selected_gate: int, gate_name: str):
+        """
+        Add gate widget to specified line and gate
+
+        :param selected_line: line number
+        :param selected_gate: gate number
+        :param gate_name: gate name
+        :return:
+        """
         master = self.LINES[selected_line]
-
-        wid_gate = Button(master, text=gate_name, width=4, height=2,
-                          font=("Helvetica", 12, "bold"), bg="cornsilk3", cursor="pirate")
-        bindButtonHover(wid_gate, cl_le="cornsilk3")
-        wid_gate.bind("<ButtonPress-1>", lambda event: master.rm_gate(wid_gate, selected_gate))
-
-        master.add_gate(wid_gate, selected_gate)
+        master.add_gate(selected_gate, gate_name)
 
 """ ----- ----- ----- ----- ----- ----- """
 
@@ -315,7 +437,7 @@ class circuit_subframe(Frame):
 class window(Tk):
 
     def QUIT(self):
-        """Quit program when pressing quit button"""
+        """ Quit function """
 
         # if self.currently_editing:
         #     ANSWER = mb.askyesno("Quit", "You are currently in edition mode,\nare you sure you want to quit?")
@@ -330,6 +452,9 @@ class window(Tk):
         exit()
 
     def __init__(self):
+        """
+        Main window object
+        """
         super().__init__()
 
         self.lastWindow = "mainMenu"
@@ -389,31 +514,31 @@ class window(Tk):
 
         # GATES #
 
-        X = DragableWidget(FRAME_circuit, grid=(0, 0, 0),
+        X = DragableWidget(FRAME_circuit, grid=(0, 0, 0), gate_type="simple",
                                      master=self, gate="X", width=4, height=2,
                                      font=("Helvetica", 12, "bold"), bg="steelblue3")
 
-        Y = DragableWidget(FRAME_circuit, grid=(1, 0, 0),
+        Y = DragableWidget(FRAME_circuit, grid=(1, 0, 0), gate_type="simple",
                                      master=self, gate="Y", width=4, height=2,
                                      font=("Helvetica", 12, "bold"), bg="steelblue3")
 
-        Z = DragableWidget(FRAME_circuit, grid=(0, 1, 0),
+        Z = DragableWidget(FRAME_circuit, grid=(0, 1, 0), gate_type="simple",
                                      master=self, gate="Z", width=4, height=2,
                                      font=("Helvetica", 12, "bold"), bg="steelblue3")
 
-        CX = DragableWidget(FRAME_circuit, grid=(2, 0, 1),
+        CX = DragableWidget(FRAME_circuit, grid=(2, 0, 1), gate_type="complex",
                            master=self, gate="CX", width=4, height=2,
                            font=("Helvetica", 12, "bold"), bg="steelblue1")
 
-        CY = DragableWidget(FRAME_circuit, grid=(3, 0, 1),
+        CY = DragableWidget(FRAME_circuit, grid=(3, 0, 1), gate_type="complex",
                            master=self, gate="CY", width=4, height=2,
                            font=("Helvetica", 12, "bold"), bg="steelblue1")
 
-        CZ = DragableWidget(FRAME_circuit, grid=(2, 1, 1),
+        CZ = DragableWidget(FRAME_circuit, grid=(2, 1, 1), gate_type="complex",
                            master=self, gate="CZ", width=4, height=2,
                            font=("Helvetica", 12, "bold"), bg="steelblue1")
 
-        H = DragableWidget(FRAME_circuit, grid=(4, 0, 2),
+        H = DragableWidget(FRAME_circuit, grid=(4, 0, 2), gate_type="simple",
                            master=self, gate="H", width=4, height=2,
                            font=("Helvetica", 12, "bold"), bg="dark sea green")
 
@@ -446,7 +571,13 @@ class window(Tk):
         self.LOAD_slide("mainMenu", unload_previous=False)
         self.mainloop()
 
-    def LOAD_slide(self, slide, unload_previous=True):
+    def LOAD_slide(self, slide: str or list, unload_previous=True) -> None:
+        """
+        Load slide with given slide name or widget list
+
+        :param slide: slide name or widget list
+        :param unload_previous: boolean, unload previous slide or not?
+        """
         if unload_previous:
             eraseFrame(self.SLIDE_WIDGETS[self.lastWindow])
 
