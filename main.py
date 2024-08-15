@@ -19,9 +19,12 @@ wid_width = win_width - 2*rb
 
 cir_height = win_height - wid_height - 3*rb
 cir_width = wid_width
-cir_line_height = 65
+cir_line_height = 70
+
+gate_size = 56
 
 circuit_size = 4
+circuit_gate_width = 14
 
 
 """ ===== ===== ===== TKINTER MANAGEMENT FUNCTIONS ===== ===== ===== """
@@ -99,6 +102,7 @@ class DragableWidget(Button):
         # ----- #
 
         self.selected_line = None
+        self.selected_gate = None
         self.LOCKED = True
 
         self.configure(cursor="pencil")
@@ -118,37 +122,47 @@ class DragableWidget(Button):
             IN = False
 
             # For all existing lines (qubits)
-            for i in range(len(self.circuit.LINES)):
+            for i in range(circuit_size):
 
                 top = rb*2 + wid_height + cir_line_height * i
                 btm = top + cir_line_height
 
                 # Is located in Y drag-n-drop area ?
                 if top <= Y < btm:
+
+                    self.selected_gate = int((X - rb) // (cir_width / circuit_gate_width))
+
                     IN = True
                     for j, line in enumerate(self.circuit.LINES):
                         if i == j:
                             self.selected_line = j
-                            line.configure(relief='raised')
+
+                            line.up()
+                            line.set_dynamic_gate(self.selected_gate)
+
                         else:
-                            line.configure(relief='flat')
+                            line.down()
+
+
 
             # Not in Y drag-n-drop area
             if not IN:
                 for line in self.circuit.LINES:
                     self.selected_line = None
-                    line.configure(relief='flat')
+                    self.selected_gate = None
+                    line.down()
 
         # Not in X drag-n-drop area
         else:
             for line in self.circuit.LINES:
                 self.selected_line = None
-                line.configure(relief='flat')
+                self.selected_gate = None
+                line.down()
 
     def on_drop(self, event):
 
         if self.selected_line is not None:
-            self.circuit.add_gate(self.selected_line, self.gate)
+            self.circuit.add_gate(self.selected_line, self.selected_gate, self.gate)
 
         for line in self.circuit.LINES:
             line.configure(relief='flat')
@@ -160,11 +174,82 @@ class DragableWidget(Button):
 """ ----- ----- ----- ----- ----- ----- """
 
 
+class DynamicCanvas(Canvas):
+
+    def __init__(self, master, **kwargs):
+        super().__init__(master=master, **kwargs)
+
+        self.state = "line" # 'line' or 'rect'
+        self.makeLine()
+
+    def reset(self):
+        if self.state == "rect":
+            self.empty()
+            self.makeLine()
+
+    def empty(self):
+        self.delete("all")
+
+    def makeLine(self):
+        self.create_line(0, 28, 65, 28, width=1)
+        self.state = "line"
+
+    def makeRect(self):
+        self.empty()
+        self.create_rectangle(5, 5, 55, 55, width=1, dash=(3, 1))
+        self.state = "rect"
+
+
+""" ----- ----- ----- ----- ----- ----- """
+
+
 class qubit_line(Frame):
+
+    def up(self):
+        self.configure(relief='raised')
+
+    def down(self):
+        self.configure(relief='flat')
+        self.reset_dynamic_gate()
 
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
 
+        self.dynamic_content = [DynamicCanvas(self, width=gate_size, height=gate_size) for _ in range(circuit_gate_width)]
+
+        for i, canva in enumerate(self.dynamic_content):
+            canva.grid(sticky=N, column=i, row=0)
+
+    def reset_dynamic_gate(self):
+        for gate in self.dynamic_content:
+            if isinstance(gate, DynamicCanvas):
+                gate.reset()
+
+    def set_dynamic_gate(self, gate_number):
+
+        self.reset_dynamic_gate()
+
+        if gate_number is not None:
+            c = self.dynamic_content[gate_number]
+
+            if isinstance(c, DynamicCanvas):
+                c.makeRect()
+
+    def rm_gate(self, widget, selected_gate):
+        widget.destroy()
+        self.dynamic_content[selected_gate] = DynamicCanvas(self, width=gate_size, height=gate_size)
+        self.dynamic_content[selected_gate].grid(sticky=N, column=selected_gate, row=0)
+
+    def add_gate(self, wid_gate, gate_number):
+
+        self.reset_dynamic_gate()
+        c = self.dynamic_content[gate_number]
+
+        if isinstance(c, DynamicCanvas):
+            c.destroy()
+
+            self.dynamic_content[gate_number] = wid_gate
+            wid_gate.grid(sticky=W, column=gate_number, row=0, padx=5, pady=0)
 
 """ ----- ----- ----- ----- ----- ----- """
 
@@ -200,14 +285,6 @@ class circuit_subframe(Frame):
         super().__init__(relief=relief, bd=bd, width=width, height=height, **kwargs)
         self.LINES = self._init_size_(circuit_size)
 
-        # TEST ZONE
-
-        c = Canvas(self.LINES[0], width=55, height=50)
-        c.create_line(5, 25, 55, 25, width=1)
-        c.pack(side=LEFT)
-
-        # TEST ZONE
-
     def pack(self, **kwargs):
 
         for line in self.LINES:
@@ -215,23 +292,22 @@ class circuit_subframe(Frame):
 
         # control line such that when all lines are filled, the frames
         # do not collapse on middle (because we are using pack for the gates)
+
         control_line = Frame(self, width=self.line_width)
         control_line.pack(side=TOP, fill=X, expand=True)
 
         super().pack(**kwargs)
 
-    def rm_gate(self, widget):
-        widget.destroy()
-
-    def add_gate(self, selected_line, gate):
+    def add_gate(self, selected_line, selected_gate, gate_name):
 
         master = self.LINES[selected_line]
 
-        wid_gate = Button(master, text=gate, width=4, height=2,
-                          font=("Helvetica", 12, "bold"), bg="cornsilk3")
+        wid_gate = Button(master, text=gate_name, width=4, height=2,
+                          font=("Helvetica", 12, "bold"), bg="cornsilk3", cursor="pirate")
         bindButtonHover(wid_gate, cl_le="cornsilk3")
-        wid_gate.bind("<ButtonPress-1>", lambda event: self.rm_gate(wid_gate))
-        wid_gate.pack(side=LEFT, padx=5)
+        wid_gate.bind("<ButtonPress-1>", lambda event: master.rm_gate(wid_gate, selected_gate))
+
+        master.add_gate(wid_gate, selected_gate)
 
 """ ----- ----- ----- ----- ----- ----- """
 
