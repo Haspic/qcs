@@ -1,15 +1,48 @@
 
-from tkinter import Button
+from tkinter import *
+from tkinter import font as tkFont
 from tkManagementFuncs import bindButtonHover
+
 from dimensions import *
+
+
+""" ----- ----- ----- ----- ----- ----- """
+
+
+class twinButton(Button):
+
+    def __init__(self, master, x, y, **kwargs):
+
+        super().__init__(master=master, text="A", **kwargs)
+
+        # ----- #
+
+        self.x_offset = 0
+        self.y_offset = 60
+
+        X = x + self.x_offset
+        Y = y + self.y_offset
+
+        # ----- #
+
+        self.place(x=X, y=Y)
+
+    def follow(self, x, y):
+        self.place(x = x + self.x_offset, y = y + self.y_offset)
+
+
+""" ----- ----- ----- ----- ----- ----- """
 
 
 class DragableWidget(Button):
 
     def _reset_position(self):
         self.place(x=self.x_init, y=self.y_init)
+        if self.type == "complex":
+            self.twin.follow(self.x_init, self.y_init)
 
     def __init__(self,
+                 master,
                  circuit_frame,
                  grid: tuple,
                  gate: str,
@@ -28,15 +61,16 @@ class DragableWidget(Button):
         """
 
         # tkinter Button widget
-        super().__init__(text=gate, bg=bg, **kwargs)
+        super().__init__(master=master, text=gate, bg=bg, **kwargs)
 
-        self.gate = gate
+        self.name = gate
+        self.type = gate_type
         self.circuit = circuit_frame
 
         # bind dragging to drag functions
         self.bind("<B1-Motion>", self.on_drag)
         self.bind("<ButtonRelease>", self.on_drop)
-        bindButtonHover(self, cl_le=bg)
+        bindButtonHover(self, cl_leave=bg)
 
         # ----- #
 
@@ -45,6 +79,14 @@ class DragableWidget(Button):
 
         self.x_offset = -10
         self.y_offset = -10
+
+        # ----- #
+
+        # If complex gate, add a twin activation gate
+        if self.type == 'complex':
+            del kwargs["font"]
+            self.twin = twinButton(master=master, x=self.x_init, y=self.y_init,
+                                   font=("Times", 13, "bold"), **kwargs)
 
         # ----- #
 
@@ -69,8 +111,13 @@ class DragableWidget(Button):
         X = self.master.winfo_pointerx() - self.master.winfo_rootx()
         Y = self.master.winfo_pointery() - self.master.winfo_rooty()
 
+        X += self.x_offset
+        Y += self.y_offset
+
         # Move widget
-        self.place(x = X + self.x_offset, y = Y + self.y_offset)
+        self.place(x=X, y=Y)
+        if self.type == "complex":
+            self.twin.follow(X, Y)
 
         # Is located in X drag-n-drop area ?
         if rb < X < win_width - rb:
@@ -78,7 +125,7 @@ class DragableWidget(Button):
             IN = False
 
             # For all existing lines (qubits)
-            for i in range(circuit_size):
+            for i in range(self.circuit.size):
 
                 top = rb*2 + wid_height + cir_line_height * i
                 btm = top + cir_line_height
@@ -116,7 +163,7 @@ class DragableWidget(Button):
 
         # If a line is selected (otherwise outside the frame)
         if self.selected_line is not None:
-            self.circuit.add_gate(self.selected_line, self.selected_gate, self.gate)
+            self.circuit.add_gate_to_circuit(self.selected_line, self.selected_gate, self)
 
         self.circuit.minimize()
         self._reset_position()

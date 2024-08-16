@@ -1,22 +1,23 @@
 
 from tkinter import Button
+from dimensions import *
 
 
 def PASS():
     pass
 
-def bindButtons(slide_widgets: list):
+def bindButtons(slide_widgets: list, **kwargs):
     """ Binds all buttons given in widget list """
-    for widget, method, kwargs in slide_widgets:
+    for widget, _, _ in slide_widgets:
         if isinstance(widget, Button):
-            bindButtonHover(widget)
+            bindButtonHover(widget, **kwargs)
 
-def bindButtonHover(button, cl_en="gold", cl_le="steelblue3"):
+def bindButtonHover(button, cl_enter="gold", cl_leave="steelblue3"):
     """ Configure given button, in order for it to change color when the mouse hovers over it """
     # mouse hover
-    button.bind("<Enter>", lambda i: button.config(bg=cl_en))  # #999999
+    button.bind("<Enter>", lambda i: button.config(bg=cl_enter))  # #999999
     # mouse leaves hover
-    button.bind("<Leave>", lambda i: button.config(bg=cl_le))  # #F0F0F0
+    button.bind("<Leave>", lambda i: button.config(bg=cl_leave))  # #F0F0F0
 
 def buildFrame(frame_widgets: list):
     """ Builds frame from given widget list (order matters) """

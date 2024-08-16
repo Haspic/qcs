@@ -14,5 +14,4 @@ cir_line_height = 70
 
 gate_size = 56
 
-circuit_size = 4
 circuit_gate_width = 14

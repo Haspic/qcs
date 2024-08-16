@@ -36,6 +36,44 @@ class window(Tk):
         # Force quit python if any unexpected errors occurs
         exit()
 
+    def _init_circuit_(self, size):
+
+        self.FRAME_buttons.destroy()
+
+        FRAME_circuit = circuit_frame(master=self, circuit_size=size)
+
+        # GATES #
+
+        X = DragableWidget(self, FRAME_circuit, grid=(0, 0, 0), gate_type="simple",
+                                     gate="X", width=4, height=2,
+                                     font=("Helvetica", 12, "bold"), bg="steelblue3")
+
+        Y = DragableWidget(self, FRAME_circuit, grid=(1, 0, 0), gate_type="simple",
+                                     gate="Y", width=4, height=2,
+                                     font=("Helvetica", 12, "bold"), bg="steelblue3")
+
+        Z = DragableWidget(self, FRAME_circuit, grid=(0, 1, 0), gate_type="simple",
+                                     gate="Z", width=4, height=2,
+                                     font=("Helvetica", 12, "bold"), bg="steelblue3")
+
+        CX = DragableWidget(self, FRAME_circuit, grid=(2, 0, 1), gate_type="complex",
+                           gate="CX", width=4, height=2,
+                           font=("Helvetica", 12, "bold"), bg="steelblue1")
+
+        CY = DragableWidget(self, FRAME_circuit, grid=(3, 0, 1), gate_type="complex",
+                           gate="CY", width=4, height=2,
+                           font=("Helvetica", 12, "bold"), bg="steelblue1")
+
+        CZ = DragableWidget(self, FRAME_circuit, grid=(4, 0, 1), gate_type="complex",
+                           gate="CZ", width=4, height=2,
+                           font=("Helvetica", 12, "bold"), bg="steelblue1")
+
+        H = DragableWidget(self, FRAME_circuit, grid=(5, 0, 2), gate_type="simple",
+                           gate="H", width=4, height=2,
+                           font=("Helvetica", 12, "bold"), bg="dark sea green")
+
+        FRAME_circuit.pack(side=TOP)
+
     def __init__(self):
         """
         Main window object
@@ -80,15 +118,13 @@ class window(Tk):
                               bd=4,
                               relief='ridge')
 
-        FRAME_circuit = circuit_frame(master=self, circuit_size=circuit_size)
+        self.FRAME_buttons = Frame(self)
 
         """###########################################"""
         """############### LABELS INIT ###############"""
         """###########################################"""
 
-        # MAIN SLIDE #
-
-        # LABEL_load_status = Label(FRAME_mainMenu, text="No rocket loaded", font=("Helvetica", 9, "italic bold"), fg="orange red")
+        LABEL_circuit_size = Label(self.FRAME_buttons, text="Select circuit size (qubit number)", font=("Helvetica", 11, ""))
         # LABEL_built_status = Label(FRAME_mainMenu, text="Rocket not built", font=("Helvetica", 9, "italic bold"), fg="orange red")
 
         """#################################################"""
@@ -97,39 +133,15 @@ class window(Tk):
 
         """ -------------------- BUTTONS -------------------- """
 
-        # GATES #
+        # is not defined by loop as it created problems somehow
+        BTN_1 = Button(self.FRAME_buttons, text="1", command=lambda: self._init_circuit_(1), width=10, relief="groove")
+        BTN_2 = Button(self.FRAME_buttons, text="2", command=lambda: self._init_circuit_(2), width=10, relief="groove")
+        BTN_3 = Button(self.FRAME_buttons, text="3", command=lambda: self._init_circuit_(3), width=10, relief="groove")
+        BTN_4 = Button(self.FRAME_buttons, text="4", command=lambda: self._init_circuit_(4), width=10, relief="groove")
+        BTN_5 = Button(self.FRAME_buttons, text="5", command=lambda: self._init_circuit_(5), width=10, relief="groove")
 
-        X = DragableWidget(FRAME_circuit, grid=(0, 0, 0), gate_type="simple",
-                                     master=self, gate="X", width=4, height=2,
-                                     font=("Helvetica", 12, "bold"), bg="steelblue3")
+        CREATE_BUTTONS = [BTN_1, BTN_2, BTN_3, BTN_4, BTN_5]
 
-        Y = DragableWidget(FRAME_circuit, grid=(1, 0, 0), gate_type="simple",
-                                     master=self, gate="Y", width=4, height=2,
-                                     font=("Helvetica", 12, "bold"), bg="steelblue3")
-
-        Z = DragableWidget(FRAME_circuit, grid=(0, 1, 0), gate_type="simple",
-                                     master=self, gate="Z", width=4, height=2,
-                                     font=("Helvetica", 12, "bold"), bg="steelblue3")
-
-        CX = DragableWidget(FRAME_circuit, grid=(2, 0, 1), gate_type="complex",
-                           master=self, gate="CX", width=4, height=2,
-                           font=("Helvetica", 12, "bold"), bg="steelblue1")
-
-        CY = DragableWidget(FRAME_circuit, grid=(3, 0, 1), gate_type="complex",
-                           master=self, gate="CY", width=4, height=2,
-                           font=("Helvetica", 12, "bold"), bg="steelblue1")
-
-        CZ = DragableWidget(FRAME_circuit, grid=(2, 1, 1), gate_type="complex",
-                           master=self, gate="CZ", width=4, height=2,
-                           font=("Helvetica", 12, "bold"), bg="steelblue1")
-
-        H = DragableWidget(FRAME_circuit, grid=(4, 0, 2), gate_type="simple",
-                           master=self, gate="H", width=4, height=2,
-                           font=("Helvetica", 12, "bold"), bg="dark sea green")
-
-        # MAIN SLIDE #
-
-        # BUTTON_CREATE = Button(FRAME_mainMenu, text="Create rocket", command=PASS, width=20, relief="groove")
         # BUTTON_LOAD = Button(FRAME_mainMenu, text="Load rocket", command=PASS, width=20, relief="groove")
         # BUTTON_BUILD = Button(FRAME_mainMenu, text="Build rocket", command=PASS, width=20, relief="groove")
         # BUTTON_SIM = Button(FRAME_mainMenu, text="Single simulation", command=lambda: self.LOAD_slide("singleSimulation"), width=20, relief="groove")
@@ -141,17 +153,19 @@ class window(Tk):
         """##################################################"""
 
         WIDGET_mainMenu = [(FRAME_widgets, "pack", {"side": TOP, "pady": 20}),
-                           (FRAME_circuit, "pack", {"side": TOP})]
+                           (self.FRAME_buttons, "pack", {"side": TOP, "pady": 20}),
+                           (LABEL_circuit_size, "pack", {"side": TOP, "pady": 20})]
+
+        WIDGET_mainMenu += [(BUTTON, "pack", {"side": LEFT, "padx": 20}) for BUTTON in CREATE_BUTTONS]
 
         # WIDGET_singleSimulation = [(BUTTON_BACK, "pack", {"expand": True})]
-
         # WIDGET_monteCarloSimulation = [(BUTTON_BACK, "pack", {"expand": True})]
 
         self.SLIDE_WIDGETS = {"mainMenu": WIDGET_mainMenu}
 
         # Binding all buttons to hover method
         for slide_widgets in self.SLIDE_WIDGETS.values():
-            bindButtons(slide_widgets)
+            bindButtons(slide_widgets, cl_leave="#F0F0F0")
 
         self.LOAD_slide("mainMenu", unload_previous=False)
         self.mainloop()
@@ -173,4 +187,5 @@ class window(Tk):
             self.lastWindow = slide
 
 
-main = window()
+if __name__ == "__main__":
+    main = window()
