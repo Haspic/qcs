@@ -10,15 +10,17 @@ from dimensions import *
 
 class DynamicButton(Button):
 
-    def __init__(self, master, gate, command, **kwargs):
+    def __init__(self, master, gate, command, bg, **kwargs):
 
         self.gate = gate
+        self.color = bg
+
         super().__init__(master=master, text=gate,
                          width=4, height=2,
-                         bg="cornsilk3", **kwargs)
+                         bg=bg, **kwargs)
 
         self.bind("<ButtonPress-1>", command)
-        bindButtonHover(self, cl_leave="cornsilk3")
+        bindButtonHover(self, cl_leave=bg)
 
 
 """ ===== ===== ===== DYNAMIC CANVAS ===== ===== ===== """
@@ -219,7 +221,6 @@ class circuit_frame(Frame):
 
         # Pack sub-frames
         for i, line in enumerate(self.LINES):
-            print(cir_line_height)
             line.place(x=0, y=cir_line_height * i)
             # line.pack(side=TOP, fill=X, expand=True)
             # line.grid(sticky=W, column=0, row=i)
@@ -284,15 +285,16 @@ class circuit_frame(Frame):
         master_l1, master_l2 = masters
         gate_l1_n, gate_l2_n = gates_n
 
-        gate_l1_name, gate_l2_name = master_l1.dynamic_content[gate_l1_n].gate, master_l2.dynamic_content[
-            gate_l2_n].gate
+        gate_l1_name, gate_l2_name = master_l1.dynamic_content[gate_l1_n].gate, master_l2.dynamic_content[gate_l2_n].gate
+        gate_l1_color = master_l1.dynamic_content[gate_l1_n].color
 
         self.rm_func(masters, gates_n)
 
-        wid_l1 = DynamicButton(master=master_l1, gate=gate_l2_name, font=("Helvetica", 12, "bold"), cursor="sb_v_double_arrow",
+        wid_l1 = DynamicButton(master=master_l1, gate=gate_l2_name, font=("Helvetica", 12, "bold"), cursor="sb_v_double_arrow", bg="cornsilk3",
                                command=lambda event: self.invert_func((master_l2, master_l1), (gate_l2_n, gate_l1_n)))
-        wid_l2 = DynamicButton(master=master_l2, gate=gate_l1_name, font=("Times", 13, "bold"), cursor="pirate",
+        wid_l2 = DynamicButton(master=master_l2, gate=gate_l1_name, font=("Times", 13, "bold"), cursor="pirate", bg=gate_l1_color,
                                command=lambda event: self.rm_func((master_l2, master_l1), (gate_l2_n, gate_l1_n)))
+        wid_l1.bind("<Button-3>", self.right_click)
 
         master_l1.place_gate(gate_l1_n, wid_l1)
         master_l2.place_gate(gate_l2_n, wid_l2)
@@ -318,9 +320,9 @@ class circuit_frame(Frame):
 
                 if master_l1.can_add_gate(gate_n) and master_l2.can_add_gate(gate_n):
 
-                    wid_l1 = DynamicButton(master=master_l1, gate=gate.name, font=("Helvetica", 12, "bold"), cursor="pirate",
+                    wid_l1 = DynamicButton(master=master_l1, gate=gate.name, font=("Helvetica", 12, "bold"), cursor="pirate", bg=gate.color,
                                            command=lambda event: self.rm_func((master_l1, master_l2), (gate_n, gate_n)))
-                    wid_l2 = DynamicButton(master=master_l2, gate="A", font=("Times", 13, "bold"), cursor="sb_v_double_arrow",
+                    wid_l2 = DynamicButton(master=master_l2, gate="A", font=("Times", 13, "bold"), cursor="sb_v_double_arrow", bg="cornsilk3",
                                            command=lambda event: self.invert_func((master_l1, master_l2), (gate_n, gate_n)))
                     wid_l2.bind("<Button-3>", self.right_click)
 
@@ -329,7 +331,7 @@ class circuit_frame(Frame):
 
         else:
             master = self.LINES[line_n]
-            wid = DynamicButton(master=master, gate=gate.name, font=("Helvetica", 12, "bold"), cursor="pirate",
+            wid = DynamicButton(master=master, gate=gate.name, font=("Helvetica", 12, "bold"), cursor="pirate", bg=gate.color,
                                 command=lambda event: self.rm_func((master,), (gate_n,)))
 
             master.place_gate(gate_n, wid)

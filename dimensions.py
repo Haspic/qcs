@@ -8,7 +8,7 @@ gate_width = 50
 gate_height = 52
 
 win_width = 906
-win_height = 600
+init_win_height = 300
 
 # 858
 cir_line_width = bd * 2 + gate_n_per_line * gate_width

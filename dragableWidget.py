@@ -65,6 +65,7 @@ class DragableWidget(Button):
 
         self.name = gate
         self.type = gate_type
+        self.color = bg
         self.circuit = circuit_frame
 
         # bind dragging to drag functions

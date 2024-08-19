@@ -38,6 +38,7 @@ class window(Tk):
 
     def _init_circuit_(self, size):
 
+        self.geometry("{}x{}".format(win_width, cir_y + bb + bd*2 + size*cir_line_height))
         self.FRAME_buttons.destroy()
 
         FRAME_circuit = circuit_frame(master=self, circuit_size=size)
@@ -76,7 +77,7 @@ class window(Tk):
         # custom activator gate
         CUSTOM = DragableWidget(self, FRAME_circuit, grid=(6, 0, 3), gate_type="complex",
                                 gate="?", width=4, height=2,
-                                font=("Helvetica", 12, "bold"), bg="seashell3")
+                                font=("Helvetica", 12, "bold"), bg="azure")
 
         # hadamard
         H = DragableWidget(self, FRAME_circuit, grid=(7, 0, 4), gate_type="simple",
@@ -103,7 +104,7 @@ class window(Tk):
         """ ############### APP INIT ############### """
         """ ######################################## """
 
-        self.geometry("{}x{}".format(win_width, win_height))
+        self.geometry("{}x{}".format(win_width, init_win_height))
         # self.minsize(750, 500)
         self.resizable(False, False)
         self.title("Quantum Circuit Simulator")
@@ -140,7 +141,7 @@ class window(Tk):
         """############### LABELS INIT ###############"""
         """###########################################"""
 
-        LABEL_circuit_size = Label(self.FRAME_buttons, text="Select circuit size (qubit number)", font=("Helvetica", 11, ""))
+        LABEL_circuit_size = Label(self, text="Select circuit size (qubit number)", font=("Helvetica", 11, "underline"))
         # LABEL_built_status = Label(FRAME_mainMenu, text="Rocket not built", font=("Helvetica", 9, "italic bold"), fg="orange red")
 
         """#################################################"""
@@ -155,8 +156,9 @@ class window(Tk):
         BTN_3 = Button(self.FRAME_buttons, text="3", command=lambda: self._init_circuit_(3), width=10, relief="groove")
         BTN_4 = Button(self.FRAME_buttons, text="4", command=lambda: self._init_circuit_(4), width=10, relief="groove")
         BTN_5 = Button(self.FRAME_buttons, text="5", command=lambda: self._init_circuit_(5), width=10, relief="groove")
+        BTN_6 = Button(self.FRAME_buttons, text="6", command=lambda: self._init_circuit_(6), width=10, relief="groove")
 
-        CREATE_BUTTONS = [BTN_1, BTN_2, BTN_3, BTN_4, BTN_5]
+        CREATE_BUTTONS = [BTN_1, BTN_2, BTN_3, BTN_4, BTN_5, BTN_6]
 
         # BUTTON_LOAD = Button(FRAME_mainMenu, text="Load rocket", command=PASS, width=20, relief="groove")
         # BUTTON_BUILD = Button(FRAME_mainMenu, text="Build rocket", command=PASS, width=20, relief="groove")
@@ -169,10 +171,10 @@ class window(Tk):
         """##################################################"""
 
         WIDGET_mainMenu = [(FRAME_widgets, "place", {"x": bb, "y": bb}),
-                           (self.FRAME_buttons, "place", {"x": cir_x, "y": cir_y + bb * 4}),
+                           (self.FRAME_buttons, "place", {"x": cir_x, "y": cir_y + bb*2}),
                            (LABEL_circuit_size, "place", {"x": cir_x, "y": cir_y})]
 
-        WIDGET_mainMenu += [(BUTTON, "pack", {"side": LEFT, "padx": 20}) for BUTTON in CREATE_BUTTONS]
+        WIDGET_mainMenu += [(BUTTON, "pack", {"side": LEFT}) for i, BUTTON in enumerate(CREATE_BUTTONS)]
 
         # WIDGET_singleSimulation = [(BUTTON_BACK, "pack", {"expand": True})]
         # WIDGET_monteCarloSimulation = [(BUTTON_BACK, "pack", {"expand": True})]
