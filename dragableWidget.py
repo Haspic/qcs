@@ -134,7 +134,7 @@ class DragableWidget(Button):
                 if top <= Y < btm:
 
                     # Which gate is it selecting ?
-                    self.selected_gate = int((X - rb) // ((cir_width - rb) / circuit_gate_width))
+                    self.selected_gate = int((X - rb) // (cir_width / circuit_gate_width))
                     self.selected_line = i
 
                     IN = True
@@ -169,4 +169,3 @@ class DragableWidget(Button):
         self._reset_position()
 
         self.selected_line = None
-

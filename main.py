@@ -44,33 +44,44 @@ class window(Tk):
 
         # GATES #
 
-        X = DragableWidget(self, FRAME_circuit, grid=(0, 0, 0), gate_type="simple",
+        # Identity
+        I = DragableWidget(self, FRAME_circuit, grid=(0, 0, 0), gate_type="simple",
+                                     gate="I", width=4, height=2,
+                                     font=("Helvetica", 12, "bold"), bg="coral1")
+
+        # Pauli matrices
+        X = DragableWidget(self, FRAME_circuit, grid=(1, 0, 1), gate_type="simple",
                                      gate="X", width=4, height=2,
                                      font=("Helvetica", 12, "bold"), bg="steelblue3")
-
-        Y = DragableWidget(self, FRAME_circuit, grid=(1, 0, 0), gate_type="simple",
+        Y = DragableWidget(self, FRAME_circuit, grid=(2, 0, 1), gate_type="simple",
                                      gate="Y", width=4, height=2,
                                      font=("Helvetica", 12, "bold"), bg="steelblue3")
-
-        Z = DragableWidget(self, FRAME_circuit, grid=(0, 1, 0), gate_type="simple",
+        Z = DragableWidget(self, FRAME_circuit, grid=(1, 1, 1), gate_type="simple",
                                      gate="Z", width=4, height=2,
                                      font=("Helvetica", 12, "bold"), bg="steelblue3")
 
-        CX = DragableWidget(self, FRAME_circuit, grid=(2, 0, 1), gate_type="complex",
+        # controlled gates
+        CX = DragableWidget(self, FRAME_circuit, grid=(3, 0, 2), gate_type="complex",
                            gate="CX", width=4, height=2,
                            font=("Helvetica", 12, "bold"), bg="steelblue1")
 
-        CY = DragableWidget(self, FRAME_circuit, grid=(3, 0, 1), gate_type="complex",
+        CY = DragableWidget(self, FRAME_circuit, grid=(4, 0, 2), gate_type="complex",
                            gate="CY", width=4, height=2,
                            font=("Helvetica", 12, "bold"), bg="steelblue1")
 
-        CZ = DragableWidget(self, FRAME_circuit, grid=(4, 0, 1), gate_type="complex",
+        CZ = DragableWidget(self, FRAME_circuit, grid=(5, 0, 2), gate_type="complex",
                            gate="CZ", width=4, height=2,
                            font=("Helvetica", 12, "bold"), bg="steelblue1")
 
-        H = DragableWidget(self, FRAME_circuit, grid=(5, 0, 2), gate_type="simple",
+        # hadamard
+        H = DragableWidget(self, FRAME_circuit, grid=(6, 0, 3), gate_type="simple",
                            gate="H", width=4, height=2,
                            font=("Helvetica", 12, "bold"), bg="dark sea green")
+
+        # phase gate
+        S = DragableWidget(self, FRAME_circuit, grid=(7, 0, 3), gate_type="simple",
+                           gate="S", width=4, height=2,
+                           font=("Helvetica", 12, "bold"), bg="sea green")
 
         FRAME_circuit.pack(side=TOP)
 

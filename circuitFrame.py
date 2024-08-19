@@ -140,7 +140,7 @@ class qubit_subframe(Frame):
         if isinstance(self.dynamic_content[gate_n], DynamicCanvas):
             return True
 
-    def place_gate(self, gate_number: int, **kwargs) -> None:
+    def place_gate(self, gate_number: int, wid_gate) -> None:
         """
         Adds a gate widget to given empty location (DynamicCanvas).
         Cannot overwrite an existing gate widget.
@@ -148,8 +148,6 @@ class qubit_subframe(Frame):
         :param gate_number: gate number
         :param kwargs: parameters to be passed on DynamicButton widget
         """
-
-        wid_gate = DynamicButton(**kwargs)
 
         # Reset animations
         self.reset_dynamic_gates()
@@ -263,27 +261,25 @@ class circuit_frame(Frame):
             else:
                 line.down()
 
-    # def invert_gate(self, coor_gate1: tuple, coor_gate2: tuple) -> None:
-    #     l1, g1 = coor_gate1
-    #     l2, g2 = coor_gate2
-    #
-    #     # invert gate in dynamic content
-    #     gate1_name, gate2_name = self.LINES[l1][g1].gate, self.LINES[l2][g2].gate
-    #
-    #     self.LINES[l1].rm_gate(g1)
-    #     self.LINES[l2].rm_gate(g2)
-    #
-    #     wid_gate = DynamicButton(master=self.LINES[l2], gate="A",
-    #                              command=lambda event: self.invert_gate((l1, g1), (l2, g2)),
-    #                              font=("Times", 13, "bold"), cursor="sb_v_double_arrow")
-    #
-    #     self.LINES[l1].add_gate_to_qubit(wid_gate, g1, haveBeenReplaced=False)
-    #     self.LINES[l2].add_gate_to_qubit(gate1_name, g2, haveBeenReplaced=False)
-
     @staticmethod
     def rm_func(masters: tuple, gates_n: tuple):
         for i, master in enumerate(masters):
             master.rm_gate(gates_n[i])
+
+    def right_click(self, event):
+
+        m = Menu(self, tearoff=0)
+        m.add_command(label="Cut")
+        m.add_command(label="Copy")
+        m.add_command(label="Paste")
+        m.add_command(label="Reload")
+        m.add_separator()
+        m.add_command(label="Rename")
+
+        try:
+            m.tk_popup(event.x_root, event.y_root)
+        finally:
+            m.grab_release()
 
     def invert_func(self, masters: tuple, gates_n: tuple):
         master_l1, master_l2 = masters
@@ -294,10 +290,13 @@ class circuit_frame(Frame):
 
         self.rm_func(masters, gates_n)
 
-        master_l1.place_gate(gate_l1_n, master=master_l1, gate=gate_l2_name, font=("Helvetica", 12, "bold"), cursor="sb_v_double_arrow",
-                             command=lambda event: self.invert_func((master_l2, master_l1), (gate_l2_n, gate_l1_n)))
-        master_l2.place_gate(gate_l2_n, master=master_l2, gate=gate_l1_name, font=("Times", 13, "bold"), cursor="pirate",
-                             command=lambda event: self.rm_func((master_l2, master_l1), (gate_l2_n, gate_l1_n)))
+        wid_l1 = DynamicButton(master=master_l1, gate=gate_l2_name, font=("Helvetica", 12, "bold"), cursor="sb_v_double_arrow",
+                               command=lambda event: self.invert_func((master_l2, master_l1), (gate_l2_n, gate_l1_n)))
+        wid_l2 = DynamicButton(master=master_l2, gate=gate_l1_name, font=("Times", 13, "bold"), cursor="pirate",
+                               command=lambda event: self.rm_func((master_l2, master_l1), (gate_l2_n, gate_l1_n)))
+
+        master_l1.place_gate(gate_l1_n, wid_l1)
+        master_l2.place_gate(gate_l2_n, wid_l2)
 
     def add_gate_to_circuit(self, line_n: int, gate_n: int, gate):
         """
@@ -320,28 +319,18 @@ class circuit_frame(Frame):
 
                 if master_l1.can_add_gate(gate_n) and master_l2.can_add_gate(gate_n):
 
-                    master_l1.place_gate(gate_n, master=master_l1, gate=gate.name, font=("Helvetica", 12, "bold"), cursor="pirate",
-                                         command=lambda event: self.rm_func((master_l1, master_l2), (gate_n, gate_n)))
-                    master_l2.place_gate(gate_n, master=master_l2, gate="A", font=("Times", 13, "bold"), cursor="sb_v_double_arrow",
-                                         command=lambda event: self.invert_func((master_l1, master_l2), (gate_n, gate_n)))
+                    wid_l1 = DynamicButton(master=master_l1, gate=gate.name, font=("Helvetica", 12, "bold"), cursor="pirate",
+                                           command=lambda event: self.rm_func((master_l1, master_l2), (gate_n, gate_n)))
+                    wid_l2 = DynamicButton(master=master_l2, gate="A", font=("Times", 13, "bold"), cursor="sb_v_double_arrow",
+                                           command=lambda event: self.invert_func((master_l1, master_l2), (gate_n, gate_n)))
+                    wid_l2.bind("<Button-3>", self.right_click)
 
-                    # super().__init__(master=master, text=gate,
-                    #                  width=4, height=2,
-                    #                  bg="cornsilk3", **kwargs)
-
-                    # master2 = self.LINES[l2]
-                    #
-                    # wid_gate = Button(master2, text="A", width=4, height=2,
-                    #                   font=("Times", 13, "bold"), bg="cornsilk3", cursor="sb_v_double_arrow")
-                    # wid_gate.bind("<ButtonPress-1>", lambda event: self.invert_gate((l1, g1), (l2, g2)))
-                    # bindButtonHover(wid_gate, cl_leave="cornsilk3")
-
-                    # wid_gate = DynamicButton(master=master2, gate="A",
-                    #                     command=lambda event: self.invert_gate((l1, g1), (l2, g2)),
-                    #                     font=("Times", 13, "bold"), cursor="sb_v_double_arrow")
-
+                    master_l1.place_gate(gate_n, wid_l1)
+                    master_l2.place_gate(gate_n, wid_l2)
 
         else:
             master = self.LINES[line_n]
-            master.place_gate(gate_n, master=master, gate=gate.name, font=("Helvetica", 12, "bold"), cursor="pirate",
-                              command=lambda event: self.rm_func((master,), (gate_n,)))
+            wid = DynamicButton(master=master, gate=gate.name, font=("Helvetica", 12, "bold"), cursor="pirate",
+                                command=lambda event: self.rm_func((master,), (gate_n,)))
+
+            master.place_gate(gate_n, wid)
