@@ -51,13 +51,13 @@ class DynamicCanvas(Canvas):
 
     def makeLine(self):
         """ Switch to line """
-        self.create_line(0, 28, 65, 28, width=1)
+        self.create_line(0, gate_height/2, gate_width, gate_height/2, width=1)
         self.state = "line"
 
     def makeRect(self):
         """ Switch to square """
         self.empty()
-        self.create_rectangle(5, 5, 55, 55, width=1, dash=(3, 1))
+        self.create_rectangle(0+2, 0+2, gate_width-2, gate_height-2, width=1, dash=(3, 1))
         self.state = "rect"
 
 
@@ -84,10 +84,10 @@ class qubit_subframe(Frame):
         super().__init__(**kwargs)
 
         # Pre-allocate space for all possible gate locations with dynamic canvas
-        self.dynamic_content = [DynamicCanvas(self, width=gate_size, height=gate_size) for _ in range(circuit_gate_width)]
+        self.dynamic_content = [DynamicCanvas(self, width=gate_width, height=gate_height, bd=0) for _ in range(gate_n_per_line)]
 
         for i, canva in enumerate(self.dynamic_content):
-            canva.grid(sticky=N, column=i, row=0)
+            canva.place(x=-2 + gate_width * i, y=-2)
 
     def __getitem__(self, item):
         return self.dynamic_content[item]
@@ -126,8 +126,8 @@ class qubit_subframe(Frame):
         self.dynamic_content[gate_n].destroy()
 
         # Replace widget
-        self.dynamic_content[gate_n] = DynamicCanvas(self, width=gate_size, height=gate_size)
-        self.dynamic_content[gate_n].grid(sticky=N, column=gate_n, row=0)
+        self.dynamic_content[gate_n] = DynamicCanvas(self, width=gate_width, height=gate_height, bd=0)
+        self.dynamic_content[gate_n].place(x=-2 + gate_width * gate_n, y=-2)
 
     def can_add_gate(self, gate_n: int) -> bool:
         """
@@ -140,12 +140,12 @@ class qubit_subframe(Frame):
         if isinstance(self.dynamic_content[gate_n], DynamicCanvas):
             return True
 
-    def place_gate(self, gate_number: int, wid_gate) -> None:
+    def place_gate(self, gate_n: int, wid_gate) -> None:
         """
         Adds a gate widget to given empty location (DynamicCanvas).
         Cannot overwrite an existing gate widget.
 
-        :param gate_number: gate number
+        :param gate_n: gate number
         :param kwargs: parameters to be passed on DynamicButton widget
         """
 
@@ -153,21 +153,20 @@ class qubit_subframe(Frame):
         self.reset_dynamic_gates()
 
         # Check for other gate at same location
-        c = self.dynamic_content[gate_number]
+        c = self.dynamic_content[gate_n]
 
         if isinstance(c, DynamicCanvas):
             c.destroy()
-            del self.dynamic_content[gate_number]
+            del self.dynamic_content[gate_n]
 
-            self.dynamic_content.insert(gate_number, wid_gate)
-            wid_gate.grid(sticky=W, column=gate_number, row=0, padx=5, pady=0)
+            self.dynamic_content.insert(gate_n, wid_gate)
+            wid_gate.place(x=-2 + gate_width * gate_n, y=-2)
 
 
 """ ===== ===== ===== CIRCUIT FRAME ===== ===== ===== """
 
 
 class circuit_frame(Frame):
-
 
     def _init_size_(self, circuit_size: int) -> list:
         """
@@ -182,8 +181,8 @@ class circuit_frame(Frame):
         # Initialize all sub-frames (1 per qubit)
         for i in range(circuit_size):
             SUBFRAME = qubit_subframe(master=self,
-                                      width=self.line_width,
-                                      height=self.line_height,
+                                      width=cir_line_width,
+                                      height=cir_line_height,
                                       bd=bd,
                                       relief='flat')
             LINES.append(SUBFRAME)
@@ -206,19 +205,12 @@ class circuit_frame(Frame):
 
         self.size = circuit_size
 
-        # Initialize size of frame
-        self.line_width = cir_width - 2*bd
-        self.line_height = cir_line_height
-
-        width = self.line_width
-        height = self.line_height * circuit_size
-
-        super().__init__(relief=relief, bd=bd, width=width, height=height, **kwargs)
+        super().__init__(relief=relief, bd=bd, width=cir_frame_width, height=cir_frame_height(circuit_size), **kwargs)
 
         # Initialize sub-frames (qubit lines)
         self.LINES = self._init_size_(circuit_size)
 
-    def pack(self, **kwargs):
+    def place(self, **kwargs):
         """
         Packing function (packs all sub-frames as well)
 
@@ -227,12 +219,14 @@ class circuit_frame(Frame):
 
         # Pack sub-frames
         for i, line in enumerate(self.LINES):
-            line.pack(side=TOP, fill=X, expand=True)
+            print(cir_line_height)
+            line.place(x=0, y=cir_line_height * i)
+            # line.pack(side=TOP, fill=X, expand=True)
             # line.grid(sticky=W, column=0, row=i)
 
         # control line to avoid collapse of sub-frames on themselves once filled
-        control_line1 = Frame(self, width=self.line_width)
-        control_line1.pack(side=TOP, fill=X, expand=True)
+        # control_line1 = Frame(self, width=self.line_width)
+        # control_line1.place(side=TOP, fill=X, expand=True)
         # control_line1.grid(sticky=N, column=0, row=len(self.LINES), columnspan=2)
 
         # control_line2 = Frame(self, height=self.line_height + 40)
@@ -240,7 +234,8 @@ class circuit_frame(Frame):
         # control_line2.grid(sticky=W, column=1, row=0, rowspan=len(self.LINES))
 
         # main frame packing
-        super().pack(**kwargs)
+        # super().pack(**kwargs)
+        super().place(**kwargs)
 
     def minimize(self):
         """ Minimize all qubits/lines animations """
@@ -268,18 +263,22 @@ class circuit_frame(Frame):
 
     def right_click(self, event):
 
-        m = Menu(self, tearoff=0)
-        m.add_command(label="Cut")
-        m.add_command(label="Copy")
-        m.add_command(label="Paste")
-        m.add_command(label="Reload")
-        m.add_separator()
-        m.add_command(label="Rename")
+        master = Toplevel(self)
+        master.resizable(False, False)
+        master.title("Gate Editor")
+        master.iconbitmap("assets/qubit.ico")
+        master.protocol("WM_DELETE_WINDOW", master.destroy)
 
-        try:
-            m.tk_popup(event.x_root, event.y_root)
-        finally:
-            m.grab_release()
+        lbl_gate_plc = Label(master, text="Gate placement")
+        lbl_acti_plc = Label(master, text="Activator placement")
+
+        entry_gate_plc = Entry(master)
+        entry_acti_plc = Entry(master)
+
+        lbl_gate_plc.pack(side=TOP, fill=X, expand=True, padx=5)
+        entry_gate_plc.pack(side=TOP, fill=X, expand=True, padx=5, pady=5)
+        lbl_acti_plc.pack(side=TOP, fill=X, expand=True, padx=5)
+        entry_acti_plc.pack(side=TOP, fill=X, expand=True, padx=5, pady=5)
 
     def invert_func(self, masters: tuple, gates_n: tuple):
         master_l1, master_l2 = masters

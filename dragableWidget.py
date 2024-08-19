@@ -74,8 +74,8 @@ class DragableWidget(Button):
 
         # ----- #
 
-        self.x_init = 20 + rb + grid[0] * 60 + grid[2] * 20
-        self.y_init = 20 + rb + grid[1] * 60
+        self.x_init = 20 + bb + grid[0] * 60 + grid[2] * 20
+        self.y_init = 20 + bb + grid[1] * 60
 
         self.x_offset = -10
         self.y_offset = -10
@@ -120,23 +120,22 @@ class DragableWidget(Button):
             self.twin.follow(X, Y)
 
         # Is located in X drag-n-drop area ?
-        if rb < X < win_width - rb:
+        if (cir_x + bd) < X < (win_width - bb - bd):
 
             IN = False
 
             # For all existing lines (qubits)
             for i in range(self.circuit.size):
 
-                top = rb*2 + wid_height + cir_line_height * i
+                top = cir_y + bd + (i * cir_line_height)
                 btm = top + cir_line_height
 
                 # Is located in Y drag-n-drop area ?
                 if top <= Y < btm:
 
                     # Which gate is it selecting ?
-                    self.selected_gate = int((X - rb) // (cir_width / circuit_gate_width))
+                    self.selected_gate = int((X - bb) // (cir_line_width / gate_n_per_line))
                     self.selected_line = i
-
                     IN = True
 
                     self.circuit.highlight(i, self.selected_gate)

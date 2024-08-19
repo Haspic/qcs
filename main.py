@@ -73,17 +73,22 @@ class window(Tk):
                            gate="CZ", width=4, height=2,
                            font=("Helvetica", 12, "bold"), bg="steelblue1")
 
+        # custom activator gate
+        CUSTOM = DragableWidget(self, FRAME_circuit, grid=(6, 0, 3), gate_type="complex",
+                                gate="?", width=4, height=2,
+                                font=("Helvetica", 12, "bold"), bg="seashell3")
+
         # hadamard
-        H = DragableWidget(self, FRAME_circuit, grid=(6, 0, 3), gate_type="simple",
+        H = DragableWidget(self, FRAME_circuit, grid=(7, 0, 4), gate_type="simple",
                            gate="H", width=4, height=2,
                            font=("Helvetica", 12, "bold"), bg="dark sea green")
 
         # phase gate
-        S = DragableWidget(self, FRAME_circuit, grid=(7, 0, 3), gate_type="simple",
+        S = DragableWidget(self, FRAME_circuit, grid=(8, 0, 4), gate_type="simple",
                            gate="S", width=4, height=2,
                            font=("Helvetica", 12, "bold"), bg="sea green")
 
-        FRAME_circuit.pack(side=TOP)
+        FRAME_circuit.place(x=cir_x, y=cir_y)
 
     def __init__(self):
         """
@@ -124,8 +129,8 @@ class window(Tk):
         """###########################################"""
 
         FRAME_widgets = Frame(self,
-                              width=wid_width,
-                              height=wid_height,
+                              width=wid_frame_width,
+                              height=wid_frame_height,
                               bd=4,
                               relief='ridge')
 
@@ -163,9 +168,9 @@ class window(Tk):
         """############### SLIDE WIDGETS INIT ###############"""
         """##################################################"""
 
-        WIDGET_mainMenu = [(FRAME_widgets, "pack", {"side": TOP, "pady": 20}),
-                           (self.FRAME_buttons, "pack", {"side": TOP, "pady": 20}),
-                           (LABEL_circuit_size, "pack", {"side": TOP, "pady": 20})]
+        WIDGET_mainMenu = [(FRAME_widgets, "place", {"x": bb, "y": bb}),
+                           (self.FRAME_buttons, "place", {"x": cir_x, "y": cir_y + bb * 4}),
+                           (LABEL_circuit_size, "place", {"x": cir_x, "y": cir_y})]
 
         WIDGET_mainMenu += [(BUTTON, "pack", {"side": LEFT, "padx": 20}) for BUTTON in CREATE_BUTTONS]
 

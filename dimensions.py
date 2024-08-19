@@ -1,17 +1,30 @@
 
-rb = 20  # border - border
-bd = 4   # borders width
+bb = 20
+bd = 4
 
-win_width = 900
+gate_n_per_line = 17
+
+gate_width = 50
+gate_height = 52
+
+win_width = 906
 win_height = 600
 
-wid_height = 150
-wid_width = win_width - 2*rb
+# 858
+cir_line_width = bd * 2 + gate_n_per_line * gate_width
+# 60
+cir_line_height = bd * 2 + gate_height
 
-cir_height = win_height - wid_height - 3*rb
-cir_width = wid_width
-cir_line_height = 70
+# 866
+cir_frame_width = bd * 2 + cir_line_width
+# 188
+cir_frame_height = lambda lines_n: bd * 2 + cir_line_height * lines_n
 
-gate_size = 56
+wid_frame_height = 150
+# 866
+wid_frame_width = cir_frame_width
 
-circuit_gate_width = 14
+# 20
+cir_x = bb
+# 190
+cir_y = bb * 2 + wid_frame_height
