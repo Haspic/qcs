@@ -286,7 +286,10 @@ class circuit_frame(Frame):
         def SAVE():
             masters = (master_targ, self.LINES[int(box_gate_plc.get())])
             self.move_gate(gate_targ, masters)
-            # self.move_gate(gate_cont, line_n)
+
+            masters = (master_cont, self.LINES[int(box_acti_plc.get())])
+            self.move_gate(gate_cont, masters)
+
 
         # NEW WINDOW
         master = Toplevel(self)
