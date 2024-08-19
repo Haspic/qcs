@@ -141,6 +141,7 @@ class qubit_subframe(Frame):
         """
         if isinstance(self.dynamic_content[gate_n], DynamicCanvas):
             return True
+        return False
 
     def place_gate(self, gate_n: int, wid_gate) -> None:
         """
