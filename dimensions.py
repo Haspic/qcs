@@ -2,13 +2,18 @@
 bb = 20
 bd = 4
 
-gate_n_per_line = 17
+gate_n_per_line = 13
 
 gate_width = 50
 gate_height = 52
 
-win_width = 906
+init_win_width = bb * 2 + gate_n_per_line * gate_width + 4 * bd
 init_win_height = 300
+
+plt_win_x = init_win_width
+plt_win_y = bb
+plt_win_width = 500
+plt_win_height = lambda size: cir_frame_height(size) + bb + wid_frame_height
 
 # 858
 cir_line_width = bd * 2 + gate_n_per_line * gate_width

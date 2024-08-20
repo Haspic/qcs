@@ -2,6 +2,19 @@
 from tkinter import *
 from tkinter import messagebox as mb
 
+import itertools as itl
+
+import matplotlib.pyplot as plt
+import random
+
+from matplotlib.backends._backend_tk import NavigationToolbar2Tk
+from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
+
+""" ===== ===== ===== SIMULATOR ===== ===== ===== """
+
+from circuit import circuit
+from gates import _0, _1, _I, _X, _Y, _Z, _CZ, _CY, _CX, _S, _H, _sqrt
+from gates import kron, Gate
 
 """ ===== ===== ===== DIMENSIONS ===== ===== ===== """
 
@@ -36,9 +49,36 @@ class window(Tk):
         # Force quit python if any unexpected errors occurs
         exit()
 
+    def _init_plot_(self, size):
+
+        plot_frame = Frame(self, width=plt_win_width, height=plt_win_height(size))
+
+        fig, ax = plt.subplots()
+
+        plot_canva = FigureCanvasTkAgg(fig, master=plot_frame)
+        plot_canva.draw()
+
+        plot_frame.place(x=plt_win_x, y=plt_win_y)
+        plot_canva.get_tk_widget().place(x=0, y=0, width=plt_win_width, height=plt_win_height(size))
+
+        measurement_states = ["".join(elt) for elt in itl.product("01", repeat=size)]
+        ax.barh(measurement_states, [random.random()*100 for _ in measurement_states],
+                height=0.9)
+
+        fig.subplots_adjust(left=0.1, right=0.95, top=0.99, bottom=0.05 * (1 + 1 / 7 * (7 - size)))
+
+        ax.tick_params(axis='y', which='major', labelsize=6 + (6 - size))
+        ax.margins(x=0, y=0)
+
+        ax.set_xticks([i * 10 for i in range(11)])
+        ax.set_xticklabels([str(i * 10) for i in range(11)])
+
+        # labels = ax.get_yticklabels()
+        # plt.setp(labels, rotation=0, horizontalalignment='right')
+
     def _init_circuit_(self, size):
 
-        self.geometry("{}x{}".format(win_width, cir_y + bb + bd*2 + size*cir_line_height))
+        self.geometry("{}x{}".format(init_win_width + bd*2 + plt_win_width, cir_y + bb + bd*2 + size*cir_line_height))
         self.FRAME_buttons.destroy()
 
         FRAME_circuit = circuit_frame(master=self, circuit_size=size)
@@ -61,35 +101,45 @@ class window(Tk):
                                      gate="Z", width=4, height=2,
                                      font=("Helvetica", 12, "bold"), bg="steelblue3")
 
-        # controlled gates
-        CX = DragableWidget(self, FRAME_circuit, grid=(3, 0, 2), gate_type="complex",
-                           gate="CX", width=4, height=2,
-                           font=("Helvetica", 12, "bold"), bg="steelblue1")
-
-        CY = DragableWidget(self, FRAME_circuit, grid=(4, 0, 2), gate_type="complex",
-                           gate="CY", width=4, height=2,
-                           font=("Helvetica", 12, "bold"), bg="steelblue1")
-
-        CZ = DragableWidget(self, FRAME_circuit, grid=(5, 0, 2), gate_type="complex",
-                           gate="CZ", width=4, height=2,
-                           font=("Helvetica", 12, "bold"), bg="steelblue1")
-
-        # custom activator gate
-        CUSTOM = DragableWidget(self, FRAME_circuit, grid=(6, 0, 3), gate_type="complex",
-                                gate="?", width=4, height=2,
-                                font=("Helvetica", 12, "bold"), bg="azure")
-
         # hadamard
-        H = DragableWidget(self, FRAME_circuit, grid=(7, 0, 4), gate_type="simple",
+        H = DragableWidget(self, FRAME_circuit, grid=(3, 0, 2), gate_type="simple",
                            gate="H", width=4, height=2,
                            font=("Helvetica", 12, "bold"), bg="dark sea green")
 
         # phase gate
-        S = DragableWidget(self, FRAME_circuit, grid=(8, 0, 4), gate_type="simple",
+        S = DragableWidget(self, FRAME_circuit, grid=(3, 1, 2), gate_type="simple",
                            gate="S", width=4, height=2,
                            font=("Helvetica", 12, "bold"), bg="sea green")
 
+        # controlled gates
+        CX = DragableWidget(self, FRAME_circuit, grid=(4, 0, 3), gate_type="complex",
+                           gate="CX", width=4, height=2,
+                           font=("Helvetica", 12, "bold"), bg="steelblue1")
+
+        CY = DragableWidget(self, FRAME_circuit, grid=(5, 0, 3), gate_type="complex",
+                           gate="CY", width=4, height=2,
+                           font=("Helvetica", 12, "bold"), bg="steelblue1")
+
+        CZ = DragableWidget(self, FRAME_circuit, grid=(6, 0, 3), gate_type="complex",
+                           gate="CZ", width=4, height=2,
+                           font=("Helvetica", 12, "bold"), bg="steelblue1")
+
+
+        CH = DragableWidget(self, FRAME_circuit, grid=(7, 0, 4), gate_type="complex",
+                           gate="CH", width=4, height=2,
+                           font=("Helvetica", 12, "bold"), bg="light sea green")
+
+        CS = DragableWidget(self, FRAME_circuit, grid=(8, 0, 4), gate_type="complex",
+                           gate="CS", width=4, height=2,
+                           font=("Helvetica", 12, "bold"), bg="light sea green")
+
+        # # custom activator gate
+        # CUSTOM = DragableWidget(self, FRAME_circuit, grid=(6, 0, 3), gate_type="complex",
+        #                         gate="?", width=4, height=2,
+        #                         font=("Helvetica", 12, "bold"), bg="azure")
+
         FRAME_circuit.place(x=cir_x, y=cir_y)
+        self._init_plot_(size)
 
     def __init__(self):
         """
@@ -104,7 +154,7 @@ class window(Tk):
         """ ############### APP INIT ############### """
         """ ######################################## """
 
-        self.geometry("{}x{}".format(win_width, init_win_height))
+        self.geometry("{}x{}".format(init_win_width, init_win_height))
         # self.minsize(750, 500)
         self.resizable(False, False)
         self.title("Quantum Circuit Simulator")
@@ -115,15 +165,15 @@ class window(Tk):
         """ ############################################ """
         """ ############### MENUBAR INIT ############### """
         """ ############################################ """
-
-        menuBar = Menu(self)
-
-        # Help menubar
-        helpMenu = Menu(menuBar, tearoff=0)
-        helpMenu.add_command(label="Load info", command=PASS)
-        menuBar.add_cascade(label="Help", menu=helpMenu)
-
-        self.config(menu=menuBar)
+        #
+        # menuBar = Menu(self)
+        #
+        # # Help menubar
+        # helpMenu = Menu(menuBar, tearoff=0)
+        # helpMenu.add_command(label="Load info", command=PASS)
+        # menuBar.add_cascade(label="Help", menu=helpMenu)
+        #
+        # self.config(menu=menuBar)
 
         """###########################################"""
         """############### FRAMES INIT ###############"""

@@ -121,7 +121,7 @@ class DragableWidget(Button):
             self.twin.follow(X, Y)
 
         # Is located in X drag-n-drop area ?
-        if (cir_x + bd) < X < (win_width - bb - bd):
+        if (cir_x + bd) < X < (init_win_width - bb - bd):
 
             IN = False
 
