@@ -303,21 +303,29 @@ class circuit_frame(Frame):
             new_pos_targ = (int(box_targ_plc.get()), gate_n)
             new_pos_cont = (int(box_cont_plc.get()), gate_n)
 
-            # New masters
-            new_master_targ = self.LINES[new_pos_targ[0]]
-            new_master_cont = self.LINES[new_pos_cont[0]]
+            if new_pos_targ[0] != new_pos_cont[0]:
 
-            # New masters argument
-            new_masters_args = (new_master_targ, new_master_cont)
+                # New masters
+                new_master_targ = self.LINES[new_pos_targ[0]]
+                new_master_cont = self.LINES[new_pos_cont[0]]
 
-            # Move target from old master to new master
-            new_masters_targ = (master_targ, # old
-                                new_master_targ) # new
-            self.move_gate(gate_targ, new_masters_targ, new_pos_targ, (new_masters_args, gate_n))
+                # New masters argument
+                new_masters_args = (new_master_targ, new_master_cont)
 
-            new_masters_cont = (master_cont, # old
-                                new_master_cont) # new
-            self.move_gate(gate_cont, new_masters_cont, new_pos_cont, (new_masters_args, gate_n))
+                # careful you are approaching ugly code, please do not interact with it too much
+
+                if new_master_targ.can_add_gate(gate_n) or new_master_cont.can_add_gate(gate_n):
+
+                    if new_master_targ.can_add_gate(gate_n) or new_pos_targ[0] == gate_targ.coor[0]:
+                        # Move target from old master to new master
+                        new_masters_targ = (master_targ, # old
+                                            new_master_targ) # new
+                        self.move_gate(gate_targ, new_masters_targ, new_pos_targ, (new_masters_args, gate_n))
+
+                    if new_master_cont.can_add_gate(gate_n) or new_pos_cont[0] == gate_cont.coor[0]:
+                        new_masters_cont = (master_cont, # old
+                                            new_master_cont) # new
+                        self.move_gate(gate_cont, new_masters_cont, new_pos_cont, (new_masters_args, gate_n))
 
             master.destroy()
 
@@ -373,6 +381,7 @@ class circuit_frame(Frame):
         self.rm_func((master_orig,), gate_n)
         wid = self.get_DynamicButton(master_dest, prop)
         master_dest.place_gate(gate_n, wid)
+
 
 
     def invert_func(self, masters: tuple, gate_n: int) -> None:
