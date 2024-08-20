@@ -11,7 +11,7 @@ from dimensions import *
 
 class DynamicButton(Button):
 
-    def __init__(self, master, gate, command, bg, font, cursor, coor, **kwargs):
+    def __init__(self, master, gate, command_tuple, bg, font, cursor, coor, **kwargs):
 
         # (line_n, gate_n)
         self.coor = coor
@@ -24,17 +24,17 @@ class DynamicButton(Button):
         self.cursor = cursor
 
         self.binded = None
-        self.command = command
+        self.command, self.args = command_tuple
 
         super().__init__(master=master, text=gate, cursor=cursor,
                          width=4, height=2, font=font, bg=bg, **kwargs)
 
-        self.bind("<ButtonPress-1>", command)
+        self.bind("<ButtonPress-1>", lambda _: self.command(*self.args))
         bindButtonHover(self, cl_leave=bg)
 
     def BIND(self, event, command):
         self.binded = (event, command)
-        self.bind(event, command)
+        self.bind(event, lambda _: command(*self.args))
 
 
 """ ===== ===== ===== DYNAMIC CANVAS ===== ===== ===== """
@@ -273,23 +273,53 @@ class circuit_frame(Frame):
                 line.down()
 
     @staticmethod
-    def rm_func(masters: tuple, gates_n: tuple):
-        for i, master in enumerate(masters):
-            master.rm_gate(gates_n[i])
+    def get_DynamicButton(master, prop):
+        wid = DynamicButton(master=master,
+                            gate=prop[0],
+                            font=prop[1],
+                            cursor=prop[2],
+                            bg=prop[3],
+                            coor=prop[4],
+                            command_tuple=(prop[5], prop[6]))
 
-    def right_click(self, masters: tuple, gates_n: tuple):
+        if prop[7] is not None:
+            event, command = prop[7]
+            wid.BIND(event, command)
+
+        return wid
+
+    @staticmethod
+    def rm_func(masters: tuple, gate_n: int):
+        for master in masters:
+            master.rm_gate(gate_n)
+
+    def right_click(self, masters: tuple, gate_n: int):
         master_targ, master_cont = masters
-        gate_targ_n, gate_cont_n = gates_n
 
-        gate_targ, gate_cont = master_targ.dynamic_content[gate_targ_n], master_cont.dynamic_content[gate_cont_n]
+        gate_targ, gate_cont = master_targ.dynamic_content[gate_n], master_cont.dynamic_content[gate_n]
 
         def SAVE():
-            masters = (master_targ, self.LINES[int(box_gate_plc.get())])
-            self.move_gate(gate_targ, masters)
+            # New position ('coor' property) for both gates (target and control)
+            new_pos_targ = (int(box_targ_plc.get()), gate_n)
+            new_pos_cont = (int(box_cont_plc.get()), gate_n)
 
-            masters = (master_cont, self.LINES[int(box_acti_plc.get())])
-            self.move_gate(gate_cont, masters)
+            # New masters
+            new_master_targ = self.LINES[new_pos_targ[0]]
+            new_master_cont = self.LINES[new_pos_cont[0]]
 
+            # New masters argument
+            new_masters_args = (new_master_targ, new_master_cont)
+
+            # Move target from old master to new master
+            new_masters_targ = (master_targ, # old
+                                new_master_targ) # new
+            self.move_gate(gate_targ, new_masters_targ, new_pos_targ, (new_masters_args, gate_n))
+
+            new_masters_cont = (master_cont, # old
+                                new_master_cont) # new
+            self.move_gate(gate_cont, new_masters_cont, new_pos_cont, (new_masters_args, gate_n))
+
+            master.destroy()
 
         # NEW WINDOW
         master = Toplevel(self)
@@ -303,100 +333,79 @@ class circuit_frame(Frame):
         bindButtonHover(btn_save, cl_leave="#F0F0F0")
 
         # Labels
-        lbl_gate_plc = Label(master, text="Target")
-        lbl_acti_plc = Label(master, text="Control")
+        lbl_targ_plc = Label(master, text="Target")
+        lbl_cont_plc = Label(master, text="Control")
 
         # Combobox TARGET / GATE
-        box_gate_plc = ttk.Combobox(master, width=5)
-        box_gate_plc["values"] = tuple([i for i in range(self.size)])
-        box_gate_plc['state'] = 'readonly'
-        box_gate_plc.set(gate_targ.coor[0])
+        box_targ_plc = ttk.Combobox(master, width=5)
+        box_targ_plc["values"] = tuple([i for i in range(self.size)])
+        box_targ_plc['state'] = 'readonly'
+        box_targ_plc.set(gate_targ.coor[0])
 
         # Combobox CONTROL / ACTIVATOR
-        box_acti_plc = ttk.Combobox(master, width=5)
-        box_acti_plc["values"] = tuple([i for i in range(self.size)])
-        box_acti_plc['state'] = 'readonly'
-        box_acti_plc.set(gate_cont.coor[0])
+        box_cont_plc = ttk.Combobox(master, width=5)
+        box_cont_plc["values"] = tuple([i for i in range(self.size)])
+        box_cont_plc['state'] = 'readonly'
+        box_cont_plc.set(gate_cont.coor[0])
 
         # Placement
-        lbl_gate_plc.grid(sticky=N, row=0, column=0, padx=5, pady=5)
-        box_gate_plc.grid(sticky=N, row=0, column=1, padx=5, pady=5)
-        lbl_acti_plc.grid(sticky=N, row=1, column=0, padx=5, pady=5)
-        box_acti_plc.grid(sticky=N, row=1, column=1, padx=5, pady=5)
+        lbl_targ_plc.grid(sticky=N, row=0, column=0, padx=5, pady=5)
+        box_targ_plc.grid(sticky=N, row=0, column=1, padx=5, pady=5)
+        lbl_cont_plc.grid(sticky=N, row=1, column=0, padx=5, pady=5)
+        box_cont_plc.grid(sticky=N, row=1, column=1, padx=5, pady=5)
         btn_save.grid(sticky=N, row=2, column=0, columnspan=2, padx=5, pady=5)
 
-    def move_gate(self, gate, masters):
+    def move_gate(self, gate, masters: tuple, new_pos: tuple, new_args: tuple) -> None:
+        """
+        Moves a gate from a location to another (given in master frame object)
+
+        :param gate: gate object to be moved
+        :param masters: master frame objects (initial, final)
+        :param new_pos: new position coordinated
+        :param new_args: new modified arguments
+        """
         master_orig, master_dest = masters
 
         line_n, gate_n = gate.coor
 
-        if master_dest.can_add_gate(gate_n):
+        prop = [gate.name, gate.font, gate.cursor, gate.color, new_pos, gate.command, new_args, gate.binded]
 
-            self.rm_func((master_orig,), (gate_n,))
+        self.rm_func((master_orig,), gate_n)
+        wid = self.get_DynamicButton(master_dest, prop)
+        master_dest.place_gate(gate_n, wid)
 
-            wid = DynamicButton(master=master_dest,
-                                gate=gate.name,
-                                font=gate.font,
-                                cursor=gate.cursor,
-                                bg=gate.color,
-                                coor=gate.coor,
-                                command=gate.command)
 
-            if wid.binded is not None:
-                event, command = wid.binded
-                wid.BIND(event, command)
+    def invert_func(self, masters: tuple, gate_n: int) -> None:
+        """
+        Inverts the position of a complex gate.
 
-            master_dest.place_gate(gate_n, wid)
-
-            return True
-
-        return False
-
-    def invert_func(self, masters: tuple, gates_n: tuple):
+        :param masters: tuple of (target_master and control_master)
+        :param gate_n: gate placement
+        """
 
         master_targ, master_cont = masters
-        gate_targ_n, gate_cont_n = gates_n
 
         # Retrieving DynamicButton objects
-        gate_targ = master_targ.dynamic_content[gate_targ_n]
-        gate_cont = master_cont.dynamic_content[gate_cont_n]
+        gate_targ = master_targ.dynamic_content[gate_n]
+        gate_cont = master_cont.dynamic_content[gate_n]
+
+        args_masters, _ = gate_targ.args
+        inverted_args = ((args_masters[1], args_masters[0]), gate_n)
 
         # Retrieving gate properties
-        targ = [gate_targ.name, gate_targ.font, gate_targ.cursor, gate_targ.color, gate_targ.coor, gate_targ.command, gate_targ.binded]
-        cont = [gate_cont.name, gate_cont.font, gate_cont.cursor, gate_cont.color, gate_cont.coor, gate_cont.command, gate_cont.binded]
+        targ = [gate_targ.name, gate_targ.font, gate_targ.cursor, gate_targ.color, gate_cont.coor, gate_targ.command, inverted_args, gate_targ.binded]
+        cont = [gate_cont.name, gate_cont.font, gate_cont.cursor, gate_cont.color, gate_targ.coor, gate_cont.command, inverted_args, gate_cont.binded]
 
         # Removing gate objects
-        self.rm_func(masters, gates_n)
+        self.rm_func(masters, gate_n)
 
-        # Recreating gates but with inverted properties
-        wid_targ = DynamicButton(master=master_targ,
-                               gate=cont[0],
-                               font=cont[1],
-                               cursor=cont[2],
-                               bg=cont[3],
-                               coor=cont[4],
-                               command=cont[5])
-
-        # Binding them again if binded before
-        if cont[6] is not None:
-            event, command = cont[6]
-            wid_targ.BIND(event, command)
-
-        wid_cont = DynamicButton(master=master_cont,
-                                 gate=targ[0],
-                                 font=targ[1],
-                                 cursor=targ[2],
-                                 bg=targ[3],
-                                 coor=targ[4],
-                                 command=targ[5])
-
-        if targ[6] is not None:
-            event, command = targ[6]
-            wid_cont.BIND(event, command)
+        # Recreating gate objects but with inverted properties
+        wid_cont = self.get_DynamicButton(master_targ, cont)
+        wid_targ = self.get_DynamicButton(master_cont, targ)
 
         # Place gates
-        master_targ.place_gate(gate_targ_n, wid_targ)
-        master_cont.place_gate(gate_cont_n, wid_cont)
+        master_targ.place_gate(gate_n, wid_cont)
+        master_cont.place_gate(gate_n, wid_targ)
 
     def add_gate_to_circuit(self, line_n: int, gate_n: int, gate):
         """
@@ -420,20 +429,20 @@ class circuit_frame(Frame):
                 if master_targ.can_add_gate(gate_n) and master_cont.can_add_gate(gate_n):
 
                     wid_targ = DynamicButton(master=master_targ,
-                                           gate=gate.name,
-                                           font=("Helvetica", 12, "bold"),
-                                           cursor="pirate",
-                                           bg=gate.color,
-                                           coor=(line_n, gate_n),
-                                           command=lambda event: self.rm_func((master_targ, master_cont), (gate_n, gate_n)))
+                                             gate=gate.name,
+                                             font=("Helvetica", 12, "bold"),
+                                             cursor="pirate",
+                                             bg=gate.color,
+                                             coor=(line_n, gate_n),
+                                             command_tuple=(self.rm_func, ((master_targ, master_cont), gate_n)))
                     wid_cont = DynamicButton(master=master_cont,
-                                           gate="A",
-                                           font=("Times", 13, "bold"),
-                                           cursor="sb_v_double_arrow",
-                                           bg="cornsilk3",
-                                           coor=(line_n, gate_n),
-                                           command=lambda event: self.invert_func((master_targ, master_cont), (gate_n, gate_n)))
-                    wid_cont.BIND("<Button-3>", lambda event: self.right_click((master_targ, master_cont), (gate_n, gate_n)))
+                                             gate="A",
+                                             font=("Times", 13, "bold"),
+                                             cursor="sb_v_double_arrow",
+                                             bg="cornsilk3",
+                                             coor=(line_n + 1, gate_n),
+                                             command_tuple=(self.invert_func, ((master_targ, master_cont), gate_n)))
+                    wid_cont.BIND("<Button-3>", self.right_click)
 
                     master_targ.place_gate(gate_n, wid_targ)
                     master_cont.place_gate(gate_n, wid_cont)
@@ -446,6 +455,6 @@ class circuit_frame(Frame):
                                 cursor="pirate",
                                 bg=gate.color,
                                 coor=(line_n, gate_n),
-                                command=lambda event: self.rm_func((master,), (gate_n,)))
+                                command_tuple=(self.rm_func, ((master,), gate_n)))
 
             master.place_gate(gate_n, wid)
