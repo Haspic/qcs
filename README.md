@@ -4,7 +4,9 @@ This program is a (very) basic simulator of quantum circuits.
 Drag gates from the widget frame into the circuit frame and see the resulting
 states probability distribution of your circuit.
 
-Here is an overview of the general structure:
+You can right-click 'A' gates in order to edit the position of the target/control gates.
+
+#### Here is an overview of the general structure:
 
 ```
 <main> ─┬─ dragable widgets (dragable gates)    -   -   -   -   -   -   -   -   -   -   -   .
@@ -39,7 +41,7 @@ Variable / terms naming within hasn't been the most thorough, namely for:
 
 This project has been worked on and tested with python 3.11.
 
-Package requirements:
+### Package requirements:
 - numpy
 
 In order to run this program simply run the main.py
