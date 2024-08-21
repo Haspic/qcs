@@ -1,5 +1,6 @@
 
 from tkinter import *
+from tkinter import messagebox as mb
 
 import itertools as itl
 from time import time
@@ -139,6 +140,12 @@ class window(Tk):
 
         :param size: Size of the circuit
         """
+
+        if size > 4:
+            mb.showwarning("Size warning",
+                           "You are simulating a circuit with 5 or more qubits.\n"
+                           "Due to slow (unoptimised) simulator code I do not recommend to"
+                           " use dynamic plotting, for a smoother experience.")
 
         self.size = size
         # Initialize all possible measurement states (used for plots)
