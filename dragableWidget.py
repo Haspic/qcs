@@ -4,12 +4,21 @@ from tkManagementFuncs import bindButtonHover
 
 from dimensions import *
 
+
 """ ----- ----- ----- ----- ----- ----- """
 
 
 class twinButton(Button):
 
     def __init__(self, master, x, y, **kwargs):
+        """
+        Twin button (control gate of 'complex' gates)
+
+        :param master: master of origin button
+        :param x: x position of origin button
+        :param y: y position of origin button
+        :param kwargs: parameters to be passed on to tkinter button widget
+        """
 
         super().__init__(master=master, text="A", **kwargs)
 

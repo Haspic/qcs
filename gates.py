@@ -26,6 +26,7 @@ def kron(*mat):
 class Gate(object):
 
     def __init__(self, mat: np.ndarray, activators=None, name=None):
+        """ Gate object """
         self.mat = mat
         self.activators = activators
 

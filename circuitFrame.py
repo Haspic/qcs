@@ -15,6 +15,18 @@ from gates import kron, gates
 class DynamicButton(Button):
 
     def __init__(self, master, gate, command_tuple, bg, font, cursor, coor, **kwargs):
+        """
+        Dynamic button object, for gate management within qubit sub-frames
+
+        :param master: master widget
+        :param gate: gate name
+        :param command_tuple: command tuple containing (command, argument list)
+        :param bg: background color
+        :param font: text font
+        :param cursor: cursor icon
+        :param coor: coordinate tuple (qubit/line, gate)
+        :param kwargs: arguments to be passed to tkinter Button widget
+        """
 
         # (line_n, gate_n)
         self.coor = coor
@@ -36,6 +48,7 @@ class DynamicButton(Button):
         bindButtonHover(self, cl_leave=bg)
 
     def BIND(self, event, command):
+        """ Allows for editable binding """
         self.binded = (event, command)
         self.bind(event, lambda _: command(*self.args))
 
@@ -216,6 +229,7 @@ class circuit_frame(Frame):
             return is_complex
 
         def add_complex_row():
+            """ Add all elements the given row, knowing that it contains 'complex' gates """
 
             encountered_gates = []
 
@@ -244,12 +258,15 @@ class circuit_frame(Frame):
                         CIRCUIT.add_gate(gate=gates[line[i].name], index=j)
 
         def add_simple_row():
+            """ Add all elements the given row, knowing that it contains only 'simple' gates """
 
             for j, line in enumerate(self.LINES):
                 if isinstance(line[i], DynamicButton):
 
                     CIRCUIT.add_gate(gate=gates[line[i].name], index=j)
 
+        # Add all gates, gates row by gates row
+        # (here naming is a bit fishy as by row I actually mean columns if you look at it from your perspective)
         for i in range(gate_n_per_line):
             if is_row_complex():
                 add_complex_row()
@@ -335,7 +352,15 @@ class circuit_frame(Frame):
                 line.down()
 
     @staticmethod
-    def get_DynamicButton(master, prop):
+    def get_DynamicButton(master, prop: list or tuple) -> DynamicButton:
+        """
+        Generate a dynamic button widget with the given properties list
+
+        :param master: widget master
+        :param prop: properties list
+
+        :return: dynamic button widget
+        """
         wid = DynamicButton(master=master,
                             gate=prop[0],
                             font=prop[1],
@@ -350,20 +375,43 @@ class circuit_frame(Frame):
 
         return wid
 
-    def remove_gate(self, masters: tuple, gate_n: int):
+    def remove_gate(self, masters: tuple, gate_n: int) -> None:
+        """
+        Remove all given gates
+
+        :param masters: master tuple
+        :param gate_n: gate number tuple
+        """
+
         for master in masters:
             master.rm_gate(gate_n)
 
-    def rm_func(self, masters: tuple, gate_n: int):
+    def rm_func(self, masters: tuple, gate_n: int) -> None:
+        """
+        Remove all given gates, but also update the probability plot afterward
+
+        :param masters: master tuple
+        :param gate_n: gate number tuple
+        """
+
         self.remove_gate(masters, gate_n)
         self.master.update_plot()
 
-    def right_click(self, masters: tuple, gate_n: int):
+    def right_click(self, masters: tuple, gate_n: int) -> None:
+        """
+        Right click, 'complex' gate edition
+
+        :param masters: masters linked to the edited gates (target and control)
+        :param gate_n: gate number on given master
+        """
+
         master_targ, master_cont = masters
 
         gate_targ, gate_cont = master_targ.dynamic_content[gate_n], master_cont.dynamic_content[gate_n]
 
         def SAVE():
+            """ Saves the gates movement if any """
+
             # New position ('coor' property) for both gates (target and control)
             new_pos_targ = (int(box_targ_plc.get()), gate_n)
             new_pos_cont = (int(box_cont_plc.get()), gate_n)

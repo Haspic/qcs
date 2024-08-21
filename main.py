@@ -12,7 +12,49 @@ from tkManagementFuncs import *
 from dragableWidget import DragableWidget
 from circuitFrame import circuit_frame
 
+from dimensions import *
 
+
+""" ----- ----- ----- ----- ----- ----- """
+"""
+
+This program is a (very) basic simulator of quantum circuits.
+Drag gates from the widget frame into the circuit frame and see the resulting
+states probability distribution of your circuit.
+
+Here is an overview of the general structure:
+
+
+<main> ─┬─ dragable widgets (dragable gates)    -   -   -   -   -   -   -   -   -   -   -   .
+        │                                                                                   .
+        ├─ {widget frame}                                                                   .
+        │                                                                                   V
+        ├─ secondary buttons (plot, clear, dynamic plot)
+        │                                                                     ┌─ dynamic buttons (gate)
+        ├─ {circuit frame} ─┬──┬─ {qubit sub-frame 1} ── [dynamic content] ── &
+        │                   │  ├─ {qubit sub-frame 2} ── [...]                └─ dynamic canvas (empty space)
+        │                   │  ⁞
+        │                   │  └─ {qubit sub-frame n} ── [...]
+        │                   │
+        │                   └──── conversion to simulator                                                     
+        │                                   '
+        └─ {plot frame} ── plot             '                   
+                            Λ               '
+                            '               '
+                            '               '
+                            '               '
+<circuit> ───── get probabilities   <   -   '
+
+
+Additional information:
+Variable / terms naming within hasn't been the most thorough, namely for:
+- qubits / lines
+- control / activator
+- target / gate
+- 'simple' gates (Z, H, I ..)
+- 'complex' gates (CZ, CH, and all other control/target gates)
+
+"""
 """ ----- ----- ----- ----- ----- ----- """
 
 
@@ -46,7 +88,13 @@ class window(Tk):
                   "| Circuit simulation took {}s".format(round(end_gen - start_gen, 5), round(end_sim - start_sim, 5)))
             self._set_plot(probs)
 
-    def _set_plot(self, y_data):
+    def _set_plot(self, y_data: list or tuple) -> None:
+        """
+        Updates the plot to the given y data
+
+        :param y_data: probability data
+        """
+
         self.ax.clear()
 
         self.ax.barh(self.measurement_states, y_data, height=0.9)
@@ -235,8 +283,7 @@ class window(Tk):
                            (self.FRAME_buttons, "place", {"x": cir_x, "y": cir_y + bb*2}),
                            (LABEL_circuit_size, "place", {"x": cir_x, "y": cir_y})]
 
-        # structure imported from other project, could have been simplified for the smaller scale of this one
-        # but not necessary
+        # structure imported from other project, could have been simplified for the smaller scale of this one but I kept as it is
         WIDGET_mainMenu += [(BUTTON, "pack", {"side": LEFT}) for i, BUTTON in enumerate(CREATE_BUTTONS)]
         self.SLIDE_WIDGETS = {"mainMenu": WIDGET_mainMenu}
 

@@ -1,4 +1,6 @@
 
+""" WINDOW AND FRAMES DIMENSIONS AND POSITIONS """
+
 bb = 20
 bd = 4
 
