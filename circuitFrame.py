@@ -319,6 +319,14 @@ class circuit_frame(Frame):
         # Initialize sub-frames (qubit lines)
         self.LINES = self._init_size_(circuit_size)
 
+    def clear(self):
+        """ Clear circuit of all widgets """
+
+        for i in range(gate_n_per_line):
+            self.remove_gate(self.LINES, i)
+
+        self.master.update_plot()
+
     def place(self, **kwargs):
         """
         Packing function (packs all sub-frames as well)
@@ -375,7 +383,7 @@ class circuit_frame(Frame):
 
         return wid
 
-    def remove_gate(self, masters: tuple, gate_n: int) -> None:
+    def remove_gate(self, masters: tuple or list, gate_n: int) -> None:
         """
         Remove all given gates
 

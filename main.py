@@ -168,6 +168,12 @@ class window(Tk):
         bindButtonHover(btn_plot, cl_leave="#F0F0F0")
         btn_plot.place(x=new_x - 145, y=new_y - 40)
 
+        btn_clear = Button(self, text="Clear circuit",
+                           height=1, width=15, relief="groove",
+                           command=self.FRAME_circuit.clear)
+        bindButtonHover(btn_clear, cl_leave="#F0F0F0")
+        btn_clear.place(x=bb, y=new_y - 40)
+
         """ ----- ----- ----- DRAGABLE GATES WIDGETS ----- ----- ----- """
 
         # Identity
