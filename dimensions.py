@@ -7,8 +7,9 @@ gate_n_per_line = 13
 gate_width = 50
 gate_height = 52
 
+#
 init_win_width = bb * 2 + gate_n_per_line * gate_width + 4 * bd
-init_win_height = 300
+init_win_height = 275
 
 plt_win_x = init_win_width
 plt_win_y = bb

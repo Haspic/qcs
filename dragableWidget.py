@@ -5,7 +5,6 @@ from tkManagementFuncs import bindButtonHover
 
 from dimensions import *
 
-
 """ ----- ----- ----- ----- ----- ----- """
 
 
@@ -121,7 +120,7 @@ class DragableWidget(Button):
             self.twin.follow(X, Y)
 
         # Is located in X drag-n-drop area ?
-        if (cir_x + bd) < X < (init_win_width - bb - bd):
+        if (cir_x + bd) < X < (init_win_width - bb - 2*bd):
 
             IN = False
 

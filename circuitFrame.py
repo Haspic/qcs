@@ -5,6 +5,9 @@ from tkManagementFuncs import *
 
 from dimensions import *
 
+from circuit import circuit
+from gates import kron, Gate, gates
+
 
 """ ===== ===== ===== DYNAMIC CANVAS ===== ===== ===== """
 
@@ -35,6 +38,11 @@ class DynamicButton(Button):
     def BIND(self, event, command):
         self.binded = (event, command)
         self.bind(event, lambda _: command(*self.args))
+
+    def is_complex(self):
+        if len(self.args[0]) > 1:
+            return True
+        return False
 
 
 """ ===== ===== ===== DYNAMIC CANVAS ===== ===== ===== """
@@ -185,6 +193,41 @@ class qubit_subframe(Frame):
 
 class circuit_frame(Frame):
 
+    def convert_to_simulator(self) -> circuit:
+
+        init = kron(*[gates["0"] for _ in range(self.size)])
+        CIRCUIT = circuit(self.size)
+        CIRCUIT.set_initial_state(init)
+
+        def is_row_complex():
+            """ Does the row contain a complex gate? (target/control) """
+            is_complex = False
+
+            for line in self.LINES:
+                if isinstance(line[i], DynamicButton):
+                    if line[i].is_complex():
+                        is_complex = True
+                        break
+            return is_complex
+
+        def add_complex_row():
+            pass
+
+        def add_simple_row():
+
+            for j, line in enumerate(self.LINES):
+                if isinstance(line[i], DynamicButton):
+
+                    CIRCUIT.add_gate(gate=gates[line[i].name], index=j)
+
+        for i in range(gate_n_per_line):
+            if is_row_complex():
+                add_complex_row()
+            else:
+                add_simple_row()
+
+        return CIRCUIT
+
     def _init_size_(self, circuit_size: int) -> list:
         """
         Initialize the circuit subframe with the specified number of qubits
@@ -207,6 +250,7 @@ class circuit_frame(Frame):
         return LINES
 
     def __init__(self,
+                 master,
                  circuit_size: int,
                  relief = "ridge",
                  bd = bd,
@@ -220,9 +264,10 @@ class circuit_frame(Frame):
         :param kwargs: parameters to be passed on to tkinter Frame widget
         """
 
+        self.master = master
         self.size = circuit_size
 
-        super().__init__(relief=relief, bd=bd, width=cir_frame_width, height=cir_frame_height(circuit_size), **kwargs)
+        super().__init__(master=master, relief=relief, bd=bd, width=cir_frame_width, height=cir_frame_height(circuit_size), **kwargs)
 
         # Initialize sub-frames (qubit lines)
         self.LINES = self._init_size_(circuit_size)
@@ -288,10 +333,11 @@ class circuit_frame(Frame):
 
         return wid
 
-    @staticmethod
-    def rm_func(masters: tuple, gate_n: int):
+    def rm_func(self, masters: tuple, gate_n: int):
         for master in masters:
             master.rm_gate(gate_n)
+
+        self.master.update_plot()
 
     def right_click(self, masters: tuple, gate_n: int):
         master_targ, master_cont = masters
@@ -456,6 +502,8 @@ class circuit_frame(Frame):
                     master_targ.place_gate(gate_n, wid_targ)
                     master_cont.place_gate(gate_n, wid_cont)
 
+                    self.master.update_plot()
+
         else:
             master = self.LINES[line_n]
             wid = DynamicButton(master=master,
@@ -467,3 +515,5 @@ class circuit_frame(Frame):
                                 command_tuple=(self.rm_func, ((master,), gate_n)))
 
             master.place_gate(gate_n, wid)
+
+            self.master.update_plot()

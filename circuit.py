@@ -96,19 +96,33 @@ class circuit(object):
         result = np.dot(result, self.initial_state)
         return result
 
-    def make_measurement(self):
+    def get_probabilities(self, measurement_states, percentage=False):
         """Make measurement of all possible state of the circuit and return probabilities of possible states"""
 
-        measurement_states = list(itl.product([_0, _1], repeat=self.size))
-        probabilities = [self.get_probabilities(kron(*state)) for state in measurement_states]
+        # Careful you are approaching ugly code, please do not interact with it too much, or you will scare it away
 
-        elt = random.choices(measurement_states, weights=probabilities, k=1)
+        m_states = []
 
-        return elt[0]
+        # Convert from str to real gates
+        for state in measurement_states:
+            s = []
+            for char in state:
+                if char == "0":
+                    s.append(_0)
+                elif char == "1":
+                    s.append(_1)
+            m_states.append(s)
 
-    def get_probabilities(self, measurement_state):
-        """Retrieve probabilities for given measurement state"""
+        # Make measurement for each measurement state
+        probabilities = [self.make_measurement(kron(*state)) for state in m_states]
 
+        if percentage:
+            probabilities = [prob * 100 for prob in probabilities]
+
+        return probabilities
+
+    def make_measurement(self, measurement_state):
+        """ Retrieve probability for a given measurement state """
         self._set_measurement_state(measurement_state)
         result = self.get_state()
         return np.abs(result) ** 2

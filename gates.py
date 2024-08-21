@@ -84,3 +84,39 @@ _CZ = Gate(np.array([[1, 0],   # Z gate
                       [0, 0]],
                      [[0, 0],  # |1> <1| activator
                       [0, 1]]]))
+# controlled-H
+_CH = Gate(1/np.sqrt(2) * np.array([[1, 1],  # H gate
+                                   [1, -1]]),
+           np.array([[[1, 0],  # |0> <0| activator
+                      [0, 0]],
+                     [[0, 0],  # |1> <1| activator
+                      [0, 1]]]))
+# controlled-S
+_CS = Gate(np.array([[1, 0],   # S gate
+                    [0, 1j]]),
+           np.array([[[1, 0],  # |0> <0| activator
+                      [0, 0]],
+                     [[0, 0],  # |1> <1| activator
+                      [0, 1]]]))
+
+gates = {
+    "0": _0,
+    "1": _1,
+
+    "I": _I,
+
+    "X": _X,
+    "Y": _Y,
+    "Z": _Z,
+
+    "S": _S,
+    "H": _H,
+
+    "CX": _CX,
+    "CY": _CY,
+    "CZ": _CZ,
+    "CH": _CH,
+    "CS": _CS,
+
+    "sqrt": _sqrt,
+}
