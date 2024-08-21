@@ -1,6 +1,5 @@
 
 from tkinter import *
-from tkinter import font as tkFont
 from tkManagementFuncs import bindButtonHover
 
 from dimensions import *

@@ -1,34 +1,17 @@
 
 from tkinter import *
-from tkinter import messagebox as mb
 
 import itertools as itl
-
-import matplotlib.pyplot as plt
-import random
-
 from time import time
 
+import matplotlib.pyplot as plt
 from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
-
-""" ===== ===== ===== SIMULATOR ===== ===== ===== """
-
-from circuit import circuit
-from gates import _0, _1, _I, _X, _Y, _Z, _CZ, _CY, _CX, _S, _H, _sqrt
-from gates import kron, Gate
-
-""" ===== ===== ===== DIMENSIONS ===== ===== ===== """
-
-from dimensions import *
-
-""" ===== ===== ===== TKINTER MANAGEMENT FUNCTIONS ===== ===== ===== """
 
 from tkManagementFuncs import *
 
-""" ===== ===== ===== TKINTER OBJECTS ===== ===== ===== """
-
 from dragableWidget import DragableWidget
 from circuitFrame import circuit_frame
+
 
 """ ----- ----- ----- ----- ----- ----- """
 
@@ -209,20 +192,6 @@ class window(Tk):
         self.title("Quantum Circuit Simulator")
         self.iconbitmap("assets/qubit.ico")
         self.protocol("WM_DELETE_WINDOW", self.QUIT)
-        # self.configure(background="#1E1E1E")
-
-        """ ############################################ """
-        """ ############### MENUBAR INIT ############### """
-        """ ############################################ """
-        #
-        # menuBar = Menu(self)
-        #
-        # # Help menubar
-        # helpMenu = Menu(menuBar, tearoff=0)
-        # helpMenu.add_command(label="Load info", command=PASS)
-        # menuBar.add_cascade(label="Help", menu=helpMenu)
-        #
-        # self.config(menu=menuBar)
 
         """###########################################"""
         """############### FRAMES INIT ###############"""

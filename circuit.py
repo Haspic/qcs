@@ -1,9 +1,7 @@
 
-import random
 import numpy as np
-import itertools as itl
 
-from gates import _0, _1, _I, _X
+from gates import _0, _1, _I
 from gates import kron
 
 

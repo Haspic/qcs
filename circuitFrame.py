@@ -6,7 +6,7 @@ from tkManagementFuncs import *
 from dimensions import *
 
 from circuit import circuit
-from gates import kron, Gate, gates
+from gates import kron, gates
 
 
 """ ===== ===== ===== DYNAMIC CANVAS ===== ===== ===== """
