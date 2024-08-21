@@ -440,7 +440,7 @@ class circuit_frame(Frame):
                                             new_master_cont) # new
                         self.move_gate(gate_cont, new_masters_cont, new_pos_cont, (new_masters_args, gate_n))
 
-            self.master.update()
+            self.master.update_plot()
             master.destroy()
 
         # NEW WINDOW
