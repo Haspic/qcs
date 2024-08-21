@@ -141,9 +141,9 @@ class window(Tk):
         :param size: Size of the circuit
         """
 
-        if size > 4:
+        if size > 5:
             mb.showwarning("Size warning",
-                           "You are simulating a circuit with 5 or more qubits.\n"
+                           "You are simulating a circuit with 6 qubits.\n"
                            "Due to slow (unoptimised) simulator code I do not recommend to"
                            " use dynamic plotting, for a smoother experience.")
 
