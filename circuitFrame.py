@@ -194,6 +194,11 @@ class qubit_subframe(Frame):
 class circuit_frame(Frame):
 
     def convert_to_simulator(self) -> circuit:
+        """
+        Convert circuit to 'circuit' simulator object
+
+        :return: 'circuit' object
+        """
 
         init = kron(*[gates["0"] for _ in range(self.size)])
         CIRCUIT = circuit(self.size)
@@ -211,7 +216,32 @@ class circuit_frame(Frame):
             return is_complex
 
         def add_complex_row():
-            pass
+
+            encountered_gates = []
+
+            for j, line in enumerate(self.LINES):
+
+                if isinstance(line[i], DynamicButton):
+
+                    if line[i].is_complex():
+
+                        # If a gate is complex, retrieve itself and associated one from the arguments
+                        master_line_target, master_line_control = line[i].args[0][0], line[i].args[0][1]
+
+                        target_gate = master_line_target.dynamic_content[i]
+                        control_gate = master_line_control.dynamic_content[i]
+
+                        # As there will be detected both target and control gates during gates detection we need to ignore one
+                        # of the two as it automatically adds the other when using .add_gate
+                        if (target_gate.coor[0] not in encountered_gates) and (control_gate.coor[0] not in encountered_gates):
+
+                            encountered_gates.append(target_gate.coor[0])
+                            encountered_gates.append(control_gate.coor[0])
+
+                            CIRCUIT.add_gate(gate=gates[target_gate.name], index=(control_gate.coor[0], target_gate.coor[0]))
+
+                    else:
+                        CIRCUIT.add_gate(gate=gates[line[i].name], index=j)
 
         def add_simple_row():
 
@@ -282,20 +312,7 @@ class circuit_frame(Frame):
         # Pack sub-frames
         for i, line in enumerate(self.LINES):
             line.place(x=0, y=cir_line_height * i)
-            # line.pack(side=TOP, fill=X, expand=True)
-            # line.grid(sticky=W, column=0, row=i)
 
-        # control line to avoid collapse of sub-frames on themselves once filled
-        # control_line1 = Frame(self, width=self.line_width)
-        # control_line1.place(side=TOP, fill=X, expand=True)
-        # control_line1.grid(sticky=N, column=0, row=len(self.LINES), columnspan=2)
-
-        # control_line2 = Frame(self, height=self.line_height + 40)
-        # control_line2.pack(side=LEFT, fill=Y, expand=True)
-        # control_line2.grid(sticky=W, column=1, row=0, rowspan=len(self.LINES))
-
-        # main frame packing
-        # super().pack(**kwargs)
         super().place(**kwargs)
 
     def minimize(self):
@@ -333,10 +350,12 @@ class circuit_frame(Frame):
 
         return wid
 
-    def rm_func(self, masters: tuple, gate_n: int):
+    def remove_gate(self, masters: tuple, gate_n: int):
         for master in masters:
             master.rm_gate(gate_n)
 
+    def rm_func(self, masters: tuple, gate_n: int):
+        self.remove_gate(masters, gate_n)
         self.master.update_plot()
 
     def right_click(self, masters: tuple, gate_n: int):
@@ -373,6 +392,7 @@ class circuit_frame(Frame):
                                             new_master_cont) # new
                         self.move_gate(gate_cont, new_masters_cont, new_pos_cont, (new_masters_args, gate_n))
 
+            self.master.update()
             master.destroy()
 
         # NEW WINDOW
@@ -392,13 +412,13 @@ class circuit_frame(Frame):
 
         # Combobox TARGET / GATE
         box_targ_plc = ttk.Combobox(master, width=5)
-        box_targ_plc["values"] = tuple([i for i in range(self.size)])
+        box_targ_plc["values"] = tuple([i for i in range(self.size) if i != gate_cont.coor[0]])
         box_targ_plc['state'] = 'readonly'
         box_targ_plc.set(gate_targ.coor[0])
 
         # Combobox CONTROL / ACTIVATOR
         box_cont_plc = ttk.Combobox(master, width=5)
-        box_cont_plc["values"] = tuple([i for i in range(self.size)])
+        box_cont_plc["values"] = tuple([i for i in range(self.size) if i != gate_targ.coor[0]])
         box_cont_plc['state'] = 'readonly'
         box_cont_plc.set(gate_cont.coor[0])
 
@@ -424,11 +444,9 @@ class circuit_frame(Frame):
 
         prop = [gate.name, gate.font, gate.cursor, gate.color, new_pos, gate.command, new_args, gate.binded]
 
-        self.rm_func((master_orig,), gate_n)
+        self.remove_gate((master_orig,), gate_n)
         wid = self.get_DynamicButton(master_dest, prop)
         master_dest.place_gate(gate_n, wid)
-
-
 
     def invert_func(self, masters: tuple, gate_n: int) -> None:
         """
@@ -452,7 +470,7 @@ class circuit_frame(Frame):
         cont = [gate_cont.name, gate_cont.font, gate_cont.cursor, gate_cont.color, gate_targ.coor, gate_cont.command, inverted_args, gate_cont.binded]
 
         # Removing gate objects
-        self.rm_func(masters, gate_n)
+        self.remove_gate(masters, gate_n)
 
         # Recreating gate objects but with inverted properties
         wid_cont = self.get_DynamicButton(master_targ, cont)
@@ -461,6 +479,8 @@ class circuit_frame(Frame):
         # Place gates
         master_targ.place_gate(gate_n, wid_cont)
         master_cont.place_gate(gate_n, wid_targ)
+
+        self.master.update_plot()
 
     def add_gate_to_circuit(self, line_n: int, gate_n: int, gate):
         """

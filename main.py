@@ -7,6 +7,8 @@ import itertools as itl
 import matplotlib.pyplot as plt
 import random
 
+from time import time
+
 from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
 
 """ ===== ===== ===== SIMULATOR ===== ===== ===== """
@@ -50,12 +52,20 @@ class window(Tk):
 
         if self.dynamic_plotting.get() or button_call:
 
+            start_gen = time()
             CIRCUIT = self.FRAME_circuit.convert_to_simulator()
+            end_gen = time()
+
+            start_sim = time()
             probs = CIRCUIT.get_probabilities(self.measurement_states, percentage=True)
+            end_sim = time()
+            print("[Updated simulation] - Circuit generation took: {}s "
+                  "| Circuit simulation took {}s".format(round(end_gen - start_gen, 5), round(end_sim - start_sim, 5)))
             self._set_plot(probs)
 
     def _set_plot(self, y_data):
         self.ax.clear()
+
         self.ax.barh(self.measurement_states, y_data, height=0.9)
 
         size = self.size
@@ -65,6 +75,9 @@ class window(Tk):
 
         self.ax.set_xticks([i * 10 for i in range(11)])
         self.ax.set_xticklabels([str(i * 10) for i in range(11)])
+
+        self.ax.grid(axis="x", alpha=0.5, dashes=(3, 1))
+        self.ax.set_axisbelow(True)
 
         self.plot_canva.draw()
 
@@ -114,7 +127,8 @@ class window(Tk):
         self.dynamic_plotting = IntVar()
         btn_dynamic_plt = Checkbutton(self, text="Dynamic plotting",
                                       variable=self.dynamic_plotting,
-                                      onvalue=1, offvalue=0, height=1, width=15)
+                                      onvalue=1, offvalue=0, height=1, width=15,
+                                      command=lambda: self.update_plot(button_call=True))
         btn_dynamic_plt.place(x=new_x - 280, y=new_y - 40)
 
         btn_plot = Button(self, text="Get probabilities",

@@ -60,7 +60,7 @@ class circuit(object):
                 first_gates, last_gates = last_gates, first_gates
                 index = (index[1], index[0])
 
-            result = np.zeros((2 ** self.size) ** 2).reshape(2 ** self.size, 2 ** self.size)
+            result = np.zeros((2 ** self.size) ** 2, dtype=np.complex128).reshape(2 ** self.size, 2 ** self.size)
 
             for j in range(2):
 
