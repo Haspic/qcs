@@ -43,6 +43,7 @@ This project has been worked on and tested with python 3.11.
 
 ### Package requirements:
 - numpy
+- matplotlib
 
 In order to run this program simply run the main.py
 ```
